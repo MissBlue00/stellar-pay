@@ -1,0 +1,20 @@
+{
+  "name": "stellar-pay-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Stellar Pay: A payment-as-a-service infrastructure for the Stellar network.",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "devDependencies": {
+    "turbo": "^1.10.0",
+    "typescript": "^5.0.0"
+  }
+}
