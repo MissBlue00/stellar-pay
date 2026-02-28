@@ -50,6 +50,7 @@ To ensure "infrastructure-grade" reliability, we use industry-standard tooling a
 
 ### The Core Stack
 
+- **Smart Contracts**: [Soroban SDK](https://soroban.stellar.org/) (Rust). For secure, on-chain payment logic.
 - **Monorepo**: [pnpm](https://pnpm.io/) + [Turborepo](https://turbo.build/) for fast, cached builds and modular scaling.
 - **Backend API**: [NestJS](https://nestjs.com/) (Node.js 20+ / TypeScript). Chosen for its opinionated, enterprise-grade architecture.
 - **Frontend Dashboard**: [Next.js 15](https://nextjs.org/) (App Router) + [Tailwind CSS]. For a modern, high-performance admin interface.
@@ -73,6 +74,12 @@ stellar-pay/
 ├── apps/
 │   ├── api/                 # NestJS Backend API
 │   └── admin-dashboard/     # Next.js Frontend
+├── contracts/               # Soroban Smart Contracts (Rust)
+│   ├── src/
+│   │   ├── escrow.rs        # Escrow & Conditional payments
+│   │   ├── subscription.rs  # Recurring payment logic
+│   │   └── payment_intent.rs # On-chain payment state management
+│   └── Cargo.toml
 ├── packages/
 │   ├── payments-engine/     # Core logic & Stellar transaction abstraction
 │   ├── anchor-service/      # SEP-24 & Asset handling
