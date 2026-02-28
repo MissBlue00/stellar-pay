@@ -7,14 +7,36 @@
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
-    "test": "turbo run test"
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
   },
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "devDependencies": {
+    "@eslint/js": "^9.39.3",
+    "@typescript-eslint/eslint-plugin": "^8.56.1",
+    "@typescript-eslint/parser": "^8.56.1",
+    "eslint": "^10.0.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.8.1",
     "turbo": "^1.13.4",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.56.1"
   }
 }
