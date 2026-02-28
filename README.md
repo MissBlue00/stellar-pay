@@ -73,7 +73,8 @@ No code reaches `main` unless it passes our automated quality gates:
 stellar-pay/
 ├── apps/
 │   ├── api/                 # NestJS Backend API
-│   └── admin-dashboard/     # Next.js Frontend
+│   ├── admin-dashboard/     # Administrative Management Dashboard
+│   └── frontend/            # Main Customer-Facing / Developer Portal
 ├── contracts/               # Soroban Smart Contracts (Rust)
 │   ├── src/
 │   │   ├── escrow.rs        # Escrow & Conditional payments
