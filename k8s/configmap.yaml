@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stellar-pay-config
+  namespace: stellar-pay
+data:
+  NODE_ENV: production
+  STELLAR_NETWORK: TESTNET
+  STELLAR_HORIZON_URL: https://horizon-testnet.stellar.org
+  SUPPORTED_ASSETS: USDC,ARS
+  LOG_LEVEL: info
+  CLOUDWATCH_LOG_GROUP: /stellar-pay/production
+  CLOUDWATCH_DASHBOARD_NAME: stellar-pay-observability
+  NEXT_PUBLIC_SITE_URL: https://app.stellar-pay.local
+  NEXT_PUBLIC_ADMIN_URL: https://admin.stellar-pay.local
+  NEXT_PUBLIC_API_BASE_URL: https://api.stellar-pay.local
+  API_BASE_URL: http://api:3000
+  PAYMENTS_ENGINE_URL: http://payments-engine:3001
+  ANCHOR_SERVICE_URL: http://anchor-service:3002
+  COMPLIANCE_ENGINE_URL: http://compliance-engine:3003
+  SUBSCRIPTIONS_URL: http://subscriptions:3004
+  ESCROW_URL: http://escrow:3005

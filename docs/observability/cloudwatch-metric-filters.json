@@ -1,0 +1,47 @@
+[
+  {
+    "filterName": "stellar-pay-error-count",
+    "filterPattern": "{ $.level = \"error\" }",
+    "metricTransformations": [
+      {
+        "metricName": "ErrorCount",
+        "metricNamespace": "StellarPay/Observability",
+        "metricValue": "1",
+        "defaultValue": 0,
+        "dimensions": {
+          "LogGroup": "__LOG_GROUP__"
+        }
+      }
+    ]
+  },
+  {
+    "filterName": "stellar-pay-warning-count",
+    "filterPattern": "{ $.level = \"warn\" }",
+    "metricTransformations": [
+      {
+        "metricName": "WarningCount",
+        "metricNamespace": "StellarPay/Observability",
+        "metricValue": "1",
+        "defaultValue": 0,
+        "dimensions": {
+          "LogGroup": "__LOG_GROUP__"
+        }
+      }
+    ]
+  },
+  {
+    "filterName": "stellar-pay-high-latency-count",
+    "filterPattern": "{ $.event = \"http_request_completed\" && $.durationMs >= 2000 }",
+    "metricTransformations": [
+      {
+        "metricName": "HighLatencyRequestCount",
+        "metricNamespace": "StellarPay/Observability",
+        "metricValue": "1",
+        "defaultValue": 0,
+        "dimensions": {
+          "LogGroup": "__LOG_GROUP__"
+        }
+      }
+    ]
+  }
+]

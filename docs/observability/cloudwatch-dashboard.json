@@ -1,0 +1,78 @@
+{
+  "widgets": [
+    {
+      "type": "log",
+      "width": 24,
+      "height": 8,
+      "x": 0,
+      "y": 0,
+      "properties": {
+        "title": "Recent Correlated Requests",
+        "region": "__REGION__",
+        "view": "table",
+        "query": "SOURCE '__LOG_GROUP__' | fields @timestamp, service, level, correlationId, route, statusCode, durationMs, message | sort @timestamp desc | limit 50"
+      }
+    },
+    {
+      "type": "log",
+      "width": 12,
+      "height": 8,
+      "x": 0,
+      "y": 8,
+      "properties": {
+        "title": "Errors by Service",
+        "region": "__REGION__",
+        "view": "timeSeries",
+        "query": "SOURCE '__LOG_GROUP__' | filter level = 'error' | stats count() as errors by bin(5m), service"
+      }
+    },
+    {
+      "type": "log",
+      "width": 12,
+      "height": 8,
+      "x": 12,
+      "y": 8,
+      "properties": {
+        "title": "P95 Latency",
+        "region": "__REGION__",
+        "view": "timeSeries",
+        "query": "SOURCE '__LOG_GROUP__' | filter event = 'http_request_completed' | stats pct(durationMs, 95) as p95LatencyMs by bin(5m)"
+      }
+    },
+    {
+      "type": "metric",
+      "width": 12,
+      "height": 6,
+      "x": 0,
+      "y": 16,
+      "properties": {
+        "title": "Error and Warning Counts",
+        "region": "__REGION__",
+        "view": "timeSeries",
+        "stat": "Sum",
+        "period": 300,
+        "metrics": [
+          ["StellarPay/Observability", "ErrorCount", "LogGroup", "__LOG_GROUP__"],
+          [".", "WarningCount", ".", "."]
+        ]
+      }
+    },
+    {
+      "type": "metric",
+      "width": 12,
+      "height": 6,
+      "x": 12,
+      "y": 16,
+      "properties": {
+        "title": "High Latency Request Count",
+        "region": "__REGION__",
+        "view": "singleValue",
+        "stat": "Sum",
+        "period": 300,
+        "metrics": [
+          ["StellarPay/Observability", "HighLatencyRequestCount", "LogGroup", "__LOG_GROUP__"]
+        ]
+      }
+    }
+  ]
+}
