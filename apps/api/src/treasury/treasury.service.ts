@@ -1,5 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { AssetReserve } from './interfaces/proof-of-reserves.interface';
+import { apiLogger } from '../observability';
+
+const serviceLogger = apiLogger.child({
+  serviceContext: 'TreasuryService',
+});
 
 @Injectable()
 export class TreasuryService {
@@ -13,7 +18,10 @@ export class TreasuryService {
     //   const balance = acc.balances.find((b: any) => b.asset_code === assetCode);
     //   return sum + (balance ? parseFloat(balance.balance) : 0);
     // }, 0).toString();
-
+    serviceLogger.debug('Fetching total supply placeholder response', {
+      event: 'treasury_total_supply_requested',
+      assetCode: _assetCode,
+    });
     return '0';
   }
 
@@ -24,7 +32,11 @@ export class TreasuryService {
     // const account = await horizon.loadAccount(treasuryAddress);
     // const balance = account.balances.find((b: any) => b.asset_code === assetCode);
     // return balance?.balance ?? '0';
-
+    serviceLogger.debug('Fetching treasury balance placeholder response', {
+      event: 'treasury_balance_requested',
+      assetCode: _assetCode,
+      treasuryAddress: _treasuryAddress,
+    });
     return '0';
   }
 
@@ -42,12 +54,27 @@ export class TreasuryService {
     // const treasuryAddress = await this.configService.getTreasuryAddress();
     const treasuryAddress = process.env.TREASURY_WALLET_ADDRESS ?? 'TREASURY_ADDRESS_NOT_SET';
 
+    if (treasuryAddress === 'TREASURY_ADDRESS_NOT_SET') {
+      serviceLogger.warn('Treasury wallet address missing, using placeholder', {
+        event: 'treasury_wallet_address_missing',
+        assetCode,
+      });
+    }
+
     const [totalSupply, treasuryBalance] = await Promise.all([
       this.getTotalSupply(assetCode),
       this.getTreasuryBalance(assetCode, treasuryAddress),
     ]);
 
     const reserveRatio = this.calculateReserveRatio(treasuryBalance, totalSupply);
+
+    serviceLogger.info('Computed asset reserve snapshot', {
+      event: 'treasury_asset_reserve_computed',
+      assetCode,
+      totalSupply,
+      treasuryBalance,
+      reserveRatio,
+    });
 
     return {
       symbol: assetCode,

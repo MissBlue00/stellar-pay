@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
@@ -8,6 +8,7 @@ import { TreasuryModule } from './treasury/treasury.module';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { ThrottlerRedisGuard } from './rate-limiter/guards/throttler-redis.guard';
+import { RequestContextMiddleware } from './observability';
 
 @Module({
   imports: [
@@ -36,4 +37,8 @@ import { ThrottlerRedisGuard } from './rate-limiter/guards/throttler-redis.guard
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(RequestContextMiddleware).forRoutes('*');
+  }
+}
