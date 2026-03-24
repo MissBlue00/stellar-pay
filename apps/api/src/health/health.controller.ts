@@ -5,6 +5,11 @@ import { DatabaseHealthIndicator } from './indicators/database.health';
 import { RedisHealthIndicator } from './indicators/redis.health';
 import { BlockchainRpcHealthIndicator } from './indicators/blockchain-rpc.health';
 import { TreasuryWalletHealthIndicator } from './indicators/treasury-wallet.health';
+import { apiLogger } from '../observability';
+
+const controllerLogger = apiLogger.child({
+  controller: 'HealthController',
+});
 
 @Controller('health')
 export class HealthController {
@@ -20,6 +25,10 @@ export class HealthController {
   @Public()
   @HealthCheck()
   check(): Promise<HealthCheckResult> {
+    controllerLogger.info('Running health checks', {
+      event: 'health_check_requested',
+    });
+
     return this.health.check([
       () => this.database.isHealthy('database'),
       () => this.redis.isHealthy('redis'),

@@ -101,6 +101,10 @@ stellar-pay/
 - **Phase 3**: Anchor Integration (SEP-24) & Compliance Hooks.
 - **Phase 4**: Admin Dashboard & Event/Webhook Streaming.
 
+## Observability
+
+Structured JSON logging, request correlation IDs, and CloudWatch dashboard assets live under [docs/observability/README.md](docs/observability/README.md). Use `scripts/observability/deploy-cloudwatch.ps1` to provision the dashboard, metric filters, and alarms for a shared `/stellar-pay/...` log group.
+
 ---
 
 ## Contributing

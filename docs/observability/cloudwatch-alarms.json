@@ -1,0 +1,40 @@
+[
+  {
+    "AlarmName": "stellar-pay-error-spike",
+    "AlarmDescription": "Triggers when error logs spike above the tolerated threshold.",
+    "Namespace": "StellarPay/Observability",
+    "MetricName": "ErrorCount",
+    "Dimensions": [
+      {
+        "Name": "LogGroup",
+        "Value": "__LOG_GROUP__"
+      }
+    ],
+    "Statistic": "Sum",
+    "Period": 300,
+    "EvaluationPeriods": 1,
+    "DatapointsToAlarm": 1,
+    "Threshold": 5,
+    "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+    "TreatMissingData": "notBreaching"
+  },
+  {
+    "AlarmName": "stellar-pay-high-latency",
+    "AlarmDescription": "Triggers when slow requests persist across the aggregation window.",
+    "Namespace": "StellarPay/Observability",
+    "MetricName": "HighLatencyRequestCount",
+    "Dimensions": [
+      {
+        "Name": "LogGroup",
+        "Value": "__LOG_GROUP__"
+      }
+    ],
+    "Statistic": "Sum",
+    "Period": 300,
+    "EvaluationPeriods": 1,
+    "DatapointsToAlarm": 1,
+    "Threshold": 3,
+    "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+    "TreatMissingData": "notBreaching"
+  }
+]
