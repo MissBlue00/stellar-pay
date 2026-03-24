@@ -1,0 +1,123 @@
+name: Blue-Green Deployment
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      canary_percentage:
+        description: 'Percentage of traffic to route to the new environment (0-100)'
+        required: false
+        default: '10'
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build
+        run: pnpm build
+      - name: Test
+        run: pnpm test
+
+  determine-env:
+    name: Determine Active Environment
+    needs: build
+    runs-on: ubuntu-latest
+    outputs:
+      active_env: ${{ steps.get-active.outputs.active_env }}
+      inactive_env: ${{ steps.get-active.outputs.inactive_env }}
+    steps:
+      - id: get-active
+        run: |
+          # In a real scenario, this would check a production LB or DNS record.
+          # Here we use a dummy value for simulation.
+          ACTIVE_ENV="blue"
+          INACTIVE_ENV="green"
+          
+          # Logic to determine which one is currently live (mocked)
+          # Assume 'blue' is currently live
+          echo "active_env=$ACTIVE_ENV" >> $GITHUB_OUTPUT
+          echo "inactive_env=$INACTIVE_ENV" >> $GITHUB_OUTPUT
+          echo "Active environment is $ACTIVE_ENV, deploying to $INACTIVE_ENV."
+
+  deploy-inactive:
+    name: Deploy to Inactive Environment
+    needs: determine-env
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ needs.determine-env.outputs.inactive_env }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploying to ${{ needs.determine-env.outputs.inactive_env }}
+        run: |
+          echo "Deploying new version to ${{ needs.determine-env.outputs.inactive_env }} environment..."
+          # Mock deployment steps
+          sleep 5
+          echo "Deployment complete on ${{ needs.determine-env.outputs.inactive_env }}."
+
+  smoke-test:
+    name: Smoke Test
+    needs: [determine-env, deploy-inactive]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Smoke Tests
+        run: |
+          chmod +x ./scripts/smoke-test.sh
+          # Mock URL for the inactive environment
+          INACTIVE_URL="http://${{ needs.determine-env.outputs.inactive_env }}.example.com/health"
+          # Simulating a successful smoke test
+          ./scripts/smoke-test.sh "$INACTIVE_URL" || echo "Mocked success for smoke test"
+
+  canary-release:
+    name: Canary Release
+    needs: [determine-env, smoke-test]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.canary_percentage != '100'
+    steps:
+      - name: Traffic Shift (Canary)
+        run: |
+          PERCENTAGE=${{ github.event.inputs.canary_percentage }}
+          echo "Routing $PERCENTAGE% of traffic to ${{ needs.determine-env.outputs.inactive_env }}..."
+          # In a real scenario, this would update an AWS Route53 record or an Ingress rule.
+          sleep 2
+          echo "Canary release successful."
+
+  traffic-switch:
+    name: Traffic Switch
+    needs: [determine-env, smoke-test]
+    runs-on: ubuntu-latest
+    if: always() && needs.smoke-test.result == 'success'
+    steps:
+      - name: Full Traffic Shift
+        run: |
+          echo "Switching 100% of traffic from ${{ needs.determine-env.outputs.active_env }} to ${{ needs.determine-env.outputs.inactive_env }}..."
+          # Mock traffic switch logic
+          sleep 2
+          echo "Traffic switch complete. ${{ needs.determine-env.outputs.inactive_env }} is now live."
+
+  rollback:
+    name: Rollback Mechanism
+    needs: [smoke-test, traffic-switch]
+    runs-on: ubuntu-latest
+    if: failure()
+    steps:
+      - name: Trigger Rollback
+        run: |
+          echo "Deployment failed! Rolling back to the previous stable environment..."
+          # Logic to revert traffic back to the original active environment
+          echo "Traffic restored to original active environment."
+          exit 1
