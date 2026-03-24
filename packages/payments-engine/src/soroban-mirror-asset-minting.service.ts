@@ -3,7 +3,7 @@ import {
   Contract,
   Keypair,
   Networks,
-  SorobanRpc,
+  rpc as SorobanRpc,
   TransactionBuilder,
   nativeToScVal,
 } from 'stellar-sdk';
@@ -71,9 +71,9 @@ export class SorobanMirrorAssetMintingService {
     prepared.sign(this.treasuryKeypair);
 
     const sendResponse = await this.rpc.sendTransaction(prepared);
-    if (sendResponse.errorResultXdr) {
+    if (sendResponse.errorResult) {
       throw new Error(
-        `Soroban transaction failed before submission: ${sendResponse.errorResultXdr}`,
+        `Soroban transaction failed before submission: ${sendResponse.errorResult.toXDR('base64')}`,
       );
     }
 
