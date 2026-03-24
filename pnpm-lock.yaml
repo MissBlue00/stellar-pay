@@ -95,6 +95,9 @@ importers:
       '@nestjs/platform-express':
         specifier: ^11.0.1
         version: 11.1.14(@nestjs/common@11.1.14(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.14)
+      '@nestjs/schedule':
+        specifier: ^6.1.1
+        version: 6.1.1(@nestjs/common@11.1.14(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.14)
       '@nestjs/swagger':
         specifier: ^11.2.6
         version: 11.2.6(@nestjs/common@11.1.14(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.14)(reflect-metadata@0.2.2)
@@ -104,9 +107,15 @@ importers:
       '@nestjs/throttler':
         specifier: ^6.5.0
         version: 6.5.0(@nestjs/common@11.1.14(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.14)(reflect-metadata@0.2.2)
+      '@stellar-pay/payments-engine':
+        specifier: workspace:*
+        version: link:../../packages/payments-engine
       '@stellar/stellar-sdk':
         specifier: ^14.6.1
         version: 14.6.1
+      cron:
+        specifier: ^4.4.0
+        version: 4.4.0
       passport:
         specifier: ^0.7.0
         version: 0.7.0
@@ -138,6 +147,9 @@ importers:
       '@nestjs/testing':
         specifier: ^11.0.1
         version: 11.1.14(@nestjs/common@11.1.14(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.14)(@nestjs/platform-express@11.1.14)
+      '@types/cron':
+        specifier: ^2.4.3
+        version: 2.4.3
       '@types/express':
         specifier: ^5.0.0
         version: 5.0.6
@@ -432,6 +444,10 @@ importers:
         version: 5.9.3
 
   packages/payments-engine:
+    dependencies:
+      stellar-sdk:
+        specifier: ^13.3.0
+        version: 13.3.0
     devDependencies:
       tsup:
         specifier: ^8.0.0
@@ -2266,6 +2282,15 @@ packages:
     peerDependencies:
       '@nestjs/common': ^11.0.0
       '@nestjs/core': ^11.0.0
+
+  '@nestjs/schedule@6.1.1':
+    resolution:
+      {
+        integrity: sha512-kQl1RRgi02GJ0uaUGCrXHCcwISsCsJDciCKe38ykJZgnAeeoeVWs8luWtBo4AqAAXm4nS5K8RlV0smHUJ4+2FA==,
+      }
+    peerDependencies:
+      '@nestjs/common': ^10.0.0 || ^11.0.0
+      '@nestjs/core': ^10.0.0 || ^11.0.0
 
   '@nestjs/schematics@11.0.9':
     resolution:
@@ -4489,6 +4514,13 @@ packages:
         integrity: sha512-VVolPL5goVEIsvuGqDc5uiKxV03lzfWdvYg1KikvwheDmTBO68CKDji3bAZ/kppZrx5iTA8z3Ld5yuytcvhvOQ==,
       }
 
+  '@stellar/stellar-base@13.1.0':
+    resolution:
+      {
+        integrity: sha512-90EArG+eCCEzDGj3OJNoCtwpWDwxjv+rs/RNPhvg4bulpjN/CSRj+Ys/SalRcfM4/WRC5/qAfjzmJBAuquWhkA==,
+      }
+    engines: { node: '>=18.0.0' }
+
   '@stellar/stellar-base@14.1.0':
     resolution:
       {
@@ -4738,6 +4770,13 @@ packages:
         integrity: sha512-he+DHOWReW0nghN24E1WUqM0efK4kI9oTqDm6XmK8ZPe2djZ90BSNdGnIyCLzCPw7/pogPlGbzI2wHGGmi4O/Q==,
       }
 
+  '@types/cron@2.4.3':
+    resolution:
+      {
+        integrity: sha512-ViRBkoZD9Rk0hGeMdd2GHGaOaZuH9mDmwsE5/Zo53Ftwcvh7h9VJc8lIt2wdgEwS4EW5lbtTX6vlE0idCLPOyA==,
+      }
+    deprecated: This is a stub types definition. cron provides its own type definitions, so you do not need this installed.
+
   '@types/d3-array@3.2.2':
     resolution:
       {
@@ -4868,6 +4907,12 @@ packages:
     resolution:
       {
         integrity: sha512-asx5hIG9Qmf/1oStypjanR7iKTv0gXQ1Ov/jfrX6kS/EO0OFni8orbmGCn0672NHR3kXHwpAwR+B368ZGN/2rA==,
+      }
+
+  '@types/luxon@3.7.1':
+    resolution:
+      {
+        integrity: sha512-H3iskjFIAn5SlJU7OuxUmTEpebK6TKB8rxZShDslBMZJ5u9S//KM1sbdAisiSrqwLQncVjnpi2OK2J51h+4lsg==,
       }
 
   '@types/methods@1.1.4':
@@ -5772,6 +5817,34 @@ packages:
       }
     engines: { node: 18 || 20 || >=22 }
 
+  bare-addon-resolve@1.10.0:
+    resolution:
+      {
+        integrity: sha512-sSd0jieRJlDaODOzj0oe0RjFVC1QI0ZIjGIdPkbrTXsdVVtENg14c+lHHAhHwmWCZ2nQlMhy8jA3Y5LYPc/isA==,
+      }
+    peerDependencies:
+      bare-url: '*'
+    peerDependenciesMeta:
+      bare-url:
+        optional: true
+
+  bare-module-resolve@1.12.1:
+    resolution:
+      {
+        integrity: sha512-hbmAPyFpEq8FoZMd5sFO3u6MC5feluWoGE8YKlA8fCrl6mNtx68Wjg4DTiDJcqRJaovTvOYKfYngoBUnbaT7eg==,
+      }
+    peerDependencies:
+      bare-url: '*'
+    peerDependenciesMeta:
+      bare-url:
+        optional: true
+
+  bare-semver@1.0.2:
+    resolution:
+      {
+        integrity: sha512-ESVaN2nzWhcI5tf3Zzcq9aqCZ676VWzqw07eEZ0qxAcEOAFYBa0pWq8sK34OQeHLY3JsfKXZS9mDyzyxGjeLzA==,
+      }
+
   base32.js@0.1.0:
     resolution:
       {
@@ -6346,6 +6419,13 @@ packages:
       {
         integrity: sha512-dcKFX3jn0MpIaXjisoRvexIJVEKzaq7z2rZKxf+MSr9TkdmHmsU4m2lcLojrj/FHl8mk5VxMmYA+ftRkP/3oKQ==,
       }
+
+  cron@4.4.0:
+    resolution:
+      {
+        integrity: sha512-fkdfq+b+AHI4cKdhZlppHveI/mgz2qpiYxcm+t5E5TsxX7QrLS1VE0+7GENEk9z0EeGPcpSciGv6ez24duWhwQ==,
+      }
+    engines: { node: '>=18.x' }
 
   cross-spawn@7.0.6:
     resolution:
@@ -9012,6 +9092,13 @@ packages:
     peerDependencies:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
+  luxon@3.7.2:
+    resolution:
+      {
+        integrity: sha512-vtEhXh/gNjI9Yg1u4jX/0YVPMvxzHuGgCm6tC5kZyb08yjGWGnqAjGJvcXbqQR2P3MyMEFnRbpcdFS6PBcLqew==,
+      }
+    engines: { node: '>=12' }
+
   magic-string@0.30.17:
     resolution:
       {
@@ -10227,6 +10314,13 @@ packages:
       }
     engines: { node: '>= 0.4' }
 
+  require-addon@1.2.0:
+    resolution:
+      {
+        integrity: sha512-VNPDZlYgIYQwWp9jMTzljx+k0ZtatKlcvOhktZ/anNPI3dQ9NXk7cq2U4iJ1wd9IrytRnYhyEocFWbkdPb+MYA==,
+      }
+    engines: { bare: '>=1.10.0' }
+
   require-directory@2.1.1:
     resolution:
       {
@@ -10581,6 +10675,12 @@ packages:
       }
     engines: { node: '>=18' }
 
+  sodium-native@4.3.3:
+    resolution:
+      {
+        integrity: sha512-OnxSlN3uyY8D0EsLHpmm2HOFmKddQVvEMmsakCrXUzSd8kjjbzL413t4ZNF3n0UxSwNgwTyUvkmZHTfuCeiYSw==,
+      }
+
   sonner@2.0.3:
     resolution:
       {
@@ -10669,6 +10769,14 @@ packages:
         integrity: sha512-UhDfHmA92YAlNnCfhmq0VeNL5bDbiZGg7sZ2IvPsXubGkiNa9EC+tUTsjBRsYUAz87btI6/1wf4XoVvQ3uRnmQ==,
       }
     engines: { node: '>=18' }
+
+  stellar-sdk@13.3.0:
+    resolution:
+      {
+        integrity: sha512-jAA3+U7oAUueldoS4kuEhcym+DigElWq9isPxt7tjMrE7kTJ2vvY29waavUb2FSfQIWwGbuwAJTYddy2BeyJsw==,
+      }
+    engines: { node: '>=18.0.0' }
+    deprecated: ⚠️ This package has moved to @stellar/stellar-sdk! 🚚
 
   stop-iteration-iterator@1.1.0:
     resolution:
@@ -11299,6 +11407,12 @@ packages:
     resolution:
       {
         integrity: sha512-Qrk3PZ7l7wUcGYhwZloqfkWCmaXZAoqjkdbIDvzfGshwGtexa/DAs9koXxIkrpEasyevandomzCBAV1Yyop5rw==,
+      }
+
+  tweetnacl@1.0.3:
+    resolution:
+      {
+        integrity: sha512-6rt+RN7aOi1nGMyC4Xa5DdYiukl2UWCbcJft7YhxReBGQD7OAM8Pbxw6YMo4r2diNEA8FEmu32YOn9rhaiE5yw==,
       }
 
   type-check@0.4.0:
@@ -13170,6 +13284,12 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@nestjs/schedule@6.1.1(@nestjs/common@11.1.14(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.14)':
+    dependencies:
+      '@nestjs/common': 11.1.14(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/core': 11.1.14(@nestjs/common@11.1.14(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.1.14)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      cron: 4.4.0
+
   '@nestjs/schematics@11.0.9(chokidar@4.0.3)(typescript@5.9.3)':
     dependencies:
       '@angular-devkit/core': 19.2.17(chokidar@4.0.3)
@@ -14793,6 +14913,19 @@ snapshots:
 
   '@stellar/js-xdr@3.1.2': {}
 
+  '@stellar/stellar-base@13.1.0':
+    dependencies:
+      '@stellar/js-xdr': 3.1.2
+      base32.js: 0.1.0
+      bignumber.js: 9.3.1
+      buffer: 6.0.3
+      sha.js: 2.4.12
+      tweetnacl: 1.0.3
+    optionalDependencies:
+      sodium-native: 4.3.3
+    transitivePeerDependencies:
+      - bare-url
+
   '@stellar/stellar-base@14.1.0':
     dependencies:
       '@noble/curves': 1.9.7
@@ -14949,6 +15082,10 @@ snapshots:
 
   '@types/cookiejar@2.1.5': {}
 
+  '@types/cron@2.4.3':
+    dependencies:
+      cron: 4.4.0
+
   '@types/d3-array@3.2.2': {}
 
   '@types/d3-color@3.1.3': {}
@@ -15023,6 +15160,8 @@ snapshots:
     dependencies:
       '@types/ms': 2.1.0
       '@types/node': 22.19.13
+
+  '@types/luxon@3.7.1': {}
 
   '@types/methods@1.1.4': {}
 
@@ -15608,6 +15747,20 @@ snapshots:
 
   balanced-match@4.0.4: {}
 
+  bare-addon-resolve@1.10.0:
+    dependencies:
+      bare-module-resolve: 1.12.1
+      bare-semver: 1.0.2
+    optional: true
+
+  bare-module-resolve@1.12.1:
+    dependencies:
+      bare-semver: 1.0.2
+    optional: true
+
+  bare-semver@1.0.2:
+    optional: true
+
   base32.js@0.1.0: {}
 
   base64-js@1.5.1: {}
@@ -15911,6 +16064,11 @@ snapshots:
       typescript: 5.9.3
 
   create-require@1.1.1: {}
+
+  cron@4.4.0:
+    dependencies:
+      '@types/luxon': 3.7.1
+      luxon: 3.7.2
 
   cross-spawn@7.0.6:
     dependencies:
@@ -17774,6 +17932,8 @@ snapshots:
     dependencies:
       react: 19.2.3
 
+  luxon@3.7.2: {}
+
   magic-string@0.30.17:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
@@ -18545,6 +18705,13 @@ snapshots:
       gopd: 1.2.0
       set-function-name: 2.0.2
 
+  require-addon@1.2.0:
+    dependencies:
+      bare-addon-resolve: 1.10.0
+    transitivePeerDependencies:
+      - bare-url
+    optional: true
+
   require-directory@2.1.1: {}
 
   require-from-string@2.0.2: {}
@@ -18873,6 +19040,13 @@ snapshots:
       ansi-styles: 6.2.3
       is-fullwidth-code-point: 5.1.0
 
+  sodium-native@4.3.3:
+    dependencies:
+      require-addon: 1.2.0
+    transitivePeerDependencies:
+      - bare-url
+    optional: true
+
   sonner@2.0.3(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
     dependencies:
       react: 19.2.3
@@ -18909,6 +19083,20 @@ snapshots:
   statuses@2.0.2: {}
 
   stdin-discarder@0.2.2: {}
+
+  stellar-sdk@13.3.0:
+    dependencies:
+      '@stellar/stellar-base': 13.1.0
+      axios: 1.13.6
+      bignumber.js: 9.3.1
+      eventsource: 2.0.2
+      feaxios: 0.0.23
+      randombytes: 2.1.0
+      toml: 3.0.0
+      urijs: 1.19.11
+    transitivePeerDependencies:
+      - bare-url
+      - debug
 
   stop-iteration-iterator@1.1.0:
     dependencies:
@@ -19324,6 +19512,8 @@ snapshots:
       turbo-windows-arm64: 1.13.4
 
   tw-animate-css@1.3.8: {}
+
+  tweetnacl@1.0.3: {}
 
   type-check@0.4.0:
     dependencies:
