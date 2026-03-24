@@ -1,17 +1,9 @@
-# file path-ci.yml
-# install
-# build
-# execute test on push
-# add lint and typeheck steps
-# push coverage reports to codecov
-
 name: CI
 
 on:
   push:
-    # branches: [main]
-    branches:
-      - '**'
+    branches: [main]
+
   pull_request:
     branches: [main]
 
