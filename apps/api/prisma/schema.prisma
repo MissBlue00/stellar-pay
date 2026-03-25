@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum KycStatus {
+  PENDING  @map("pending")
+  APPROVED @map("approved")
+  REJECTED @map("rejected")
+}
+
+enum PaymentIntentStatus {
+  PENDING   @map("pending")
+  DETECTED  @map("detected")
+  CONFIRMED @map("confirmed")
+  FAILED    @map("failed")
+}
+
+model Merchant {
+  id               String            @id @default(uuid()) @db.Uuid
+  email            String            @unique
+  passwordHash     String            @map("password_hash")
+  kycStatus        KycStatus         @default(PENDING) @map("kyc_status")
+  paymentIntents   PaymentIntent[]
+  webhookEndpoints WebhookEndpoint[]
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+
+  @@map("merchants")
+}
+
+model PaymentIntent {
+  id         String              @id @default(uuid()) @db.Uuid
+  merchantId String              @map("merchant_id") @db.Uuid
+  merchant   Merchant            @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  amount     Decimal             @db.Decimal(20, 2)
+  currency   String              @db.VarChar(3)
+  status     PaymentIntentStatus @default(PENDING)
+  createdAt  DateTime            @default(now()) @map("created_at")
+  updatedAt  DateTime            @updatedAt @map("updated_at")
+
+  @@index([merchantId])
+  @@map("payment_intents")
+}
+
+model TreasuryAsset {
+  symbol        String  @id @db.VarChar(16)
+  totalMinted   Decimal @default(0) @map("total_minted") @db.Decimal(30, 7)
+  totalReserved Decimal @default(0) @map("total_reserved") @db.Decimal(30, 7)
+
+  @@map("treasury_assets")
+}
+
+model WebhookEndpoint {
+  id         String   @id @default(uuid()) @db.Uuid
+  merchantId String   @map("merchant_id") @db.Uuid
+  merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  url        String
+  secret     String
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([merchantId])
+  @@map("webhook_endpoints")
+}
