@@ -1,0 +1,25 @@
+{
+  "name": "@stellar-pay/database",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "db:generate": "prisma generate --schema ./migrations/schema.prisma",
+    "db:migrate:dev": "prisma migrate dev --schema ./migrations/schema.prisma",
+    "db:migrate:status": "prisma migrate status --schema ./migrations/schema.prisma",
+    "db:migrate:deploy": "bash ./migrations/deploy.sh",
+    "db:seed": "prisma db seed --schema ./migrations/schema.prisma",
+    "db:push": "prisma db push --schema ./migrations/schema.prisma",
+    "db:test:migrate": "bash ./migrations/test-migrate.sh"
+  },
+  "prisma": {
+    "seed": "node ./migrations/seed.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.6.0"
+  },
+  "devDependencies": {
+    "prisma": "^6.6.0"
+  }
+}
