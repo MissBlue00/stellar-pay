@@ -1,0 +1,53 @@
+services:
+  prometheus:
+    image: prom/prometheus:v2.53.1
+    ports:
+      - '9090:9090'
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alerts:/etc/prometheus/alerts:ro
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+    depends_on:
+      - alertmanager
+      - blackbox-exporter
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    ports:
+      - '9093:9093'
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+
+  blackbox-exporter:
+    image: prom/blackbox-exporter:v0.25.0
+    ports:
+      - '9115:9115'
+    volumes:
+      - ./blackbox/blackbox.yml:/config/blackbox.yml:ro
+    command:
+      - --config.file=/config/blackbox.yml
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    ports:
+      - '3003:3000'
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+
+networks:
+  default:
+    name: stellar-pay-monitoring

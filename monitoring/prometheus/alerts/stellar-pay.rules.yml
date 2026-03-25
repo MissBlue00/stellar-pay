@@ -1,0 +1,75 @@
+groups:
+  - name: stellar-pay-api
+    interval: 30s
+    rules:
+      - alert: ApiScrapeDown
+        expr: up{job="api"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Prometheus cannot scrape the API /metrics target.
+          description: The `api` job has been unreachable for more than 2 minutes.
+
+      - alert: ApiHigh5xxRate
+        expr: |
+          (
+            sum(rate(http_requests_total{job="api",status_class="5xx"}[5m]))
+            /
+            sum(rate(http_requests_total{job="api"}[5m]))
+          ) > 0.05
+          and sum(rate(http_requests_total{job="api"}[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: API 5xx error rate is above 5% (5m average).
+          description: >-
+            More than 5% of scraped HTTP requests returned 5xx over the last 5 minutes,
+            with sufficient traffic (> 0.1 req/s) to avoid noise.
+
+      - alert: ApiHighLatencyP95
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(http_request_duration_seconds_bucket{job="api"}[5m])) by (le)
+          ) > 2
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: API p95 latency exceeds 2 seconds.
+          description: >-
+            The 95th percentile of HTTP request duration is above 2s over a 10-minute window.
+
+      - alert: ApiLowThroughput
+        expr: sum(rate(http_requests_total{job="api"}[15m])) < 0.01
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: API request throughput is very low.
+          description: >-
+            Less than 0.01 requests/sec averaged over 15 minutes for 30 minutes.
+            Tune or disable in environments with irregular traffic.
+
+  - name: stellar-pay-uptime
+    interval: 30s
+    rules:
+      - alert: BlackboxProbeFailed
+        expr: probe_success{job="blackbox"} == 0
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: HTTP probe failed for {{ $labels.instance }}.
+          description: Blackbox exporter reports probe_success=0 for this target.
+
+      - alert: BlackboxProbeSlow
+        expr: probe_duration_seconds{job="blackbox"} > 3
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: HTTP probe latency is high for {{ $labels.instance }}.
+          description: Blackbox `probe_duration_seconds` exceeds 3 seconds.
