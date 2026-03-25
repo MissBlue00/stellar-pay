@@ -1,12 +1,13 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import { MerchantsService } from '../../merchants/merchants.service';
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
 import { MerchantUser } from '../interfaces/merchant-user.interface';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
+  constructor(private readonly merchantsService: MerchantsService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
@@ -19,11 +20,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Invalid token: merchant_id missing');
     }
 
-    // TODO: Validate merchant exists in database
-    // Example:
-    // const merchant = await this.merchantService.findById(payload.merchant_id);
-    // if (!merchant) throw new UnauthorizedException('Merchant not found');
+    const merchant = await this.merchantsService.findById(payload.merchant_id);
+    if (!merchant) {
+      throw new UnauthorizedException('Merchant not found');
+    }
 
-    return { merchant_id: payload.merchant_id };
+    return { merchant_id: merchant.id };
   }
 }
