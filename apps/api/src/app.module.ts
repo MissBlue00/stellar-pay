@@ -3,6 +3,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { PrismaModule } from './prisma/prisma.module';
 import { HealthModule } from './health/health.module';
 import { TreasuryModule } from './treasury/treasury.module';
 import { AuthModule } from './auth/auth.module';
@@ -11,6 +12,7 @@ import { ThrottlerRedisGuard } from './rate-limiter/guards/throttler-redis.guard
 
 @Module({
   imports: [
+    PrismaModule,
     HealthModule,
     TreasuryModule,
     AuthModule,
