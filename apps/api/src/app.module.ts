@@ -4,6 +4,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { HealthModule } from './health/health.module';
+import { MetricsModule } from './metrics/metrics.module';
 import { TreasuryModule } from './treasury/treasury.module';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
@@ -12,6 +13,7 @@ import { ThrottlerRedisGuard } from './rate-limiter/guards/throttler-redis.guard
 @Module({
   imports: [
     HealthModule,
+    MetricsModule,
     TreasuryModule,
     AuthModule,
     ThrottlerModule.forRoot({
