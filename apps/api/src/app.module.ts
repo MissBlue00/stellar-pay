@@ -8,9 +8,15 @@ import { TreasuryModule } from './treasury/treasury.module';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { ThrottlerRedisGuard } from './rate-limiter/guards/throttler-redis.guard';
+import { ConfigModule } from '@nestjs/config';
+import { validate } from './config/env.validation';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      validate,
+      isGlobal: true,
+    }),
     HealthModule,
     TreasuryModule,
     AuthModule,
