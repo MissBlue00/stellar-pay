@@ -3,12 +3,13 @@ name: CI
 on:
   push:
     branches: [main]
+
   pull_request:
     branches: [main]
 
 jobs:
   build:
-    name: Build, Lint, and Typecheck
+    name: Build, Lint, Test, and Coverage
     runs-on: ubuntu-latest
 
     steps:
@@ -40,5 +41,10 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Test
-        run: pnpm test
+      - name: Test with coverage
+        run: pnpm test -- --coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          fail_ci_if_error: false
