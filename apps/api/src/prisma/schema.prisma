@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model PaymentIntent {
+  id               String           @id @default(cuid())
+  merchantId       String
+  amount           Decimal          @db.Decimal(18, 8)
+  currency         String
+  metadata         Json?
+  status           PaymentIntentStatus @default(PENDING)
+  depositAddresses DepositAddress[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@index([merchantId])
+}
+
+model DepositAddress {
+  id               String        @id @default(cuid())
+  paymentIntentId  String
+  paymentIntent    PaymentIntent @relation(fields: [paymentIntentId], references: [id], onDelete: Cascade)
+  chain            Chain
+  address          String
+  memo             String?       // Stellar memo-based routing
+  derivationIndex  Int
+  expiresAt        DateTime?
+  createdAt        DateTime      @default(now())
+
+  @@unique([paymentIntentId, chain])
+  @@index([address])
+}
+
+enum Chain {
+  STELLAR
+  BITCOIN
+  ETHEREUM
+}
+
+enum PaymentIntentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  EXPIRED
+}
