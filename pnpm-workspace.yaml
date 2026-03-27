@@ -4,7 +4,10 @@ packages:
 
 ignoredBuiltDependencies:
   - '@nestjs/core'
+  - '@prisma/client'
+  - '@prisma/engines'
   - esbuild
   - msw
+  - prisma
   - sharp
   - unrs-resolver
