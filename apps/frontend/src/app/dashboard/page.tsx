@@ -44,15 +44,9 @@ const stats = [
 ];
 
 const assets = [
-  {
-    symbol: 'sUSDC',
-    balance: '1,245,382.45',
-    usd: '1,245,382.45',
-    change: '+2.3%',
-    barWidth: '95%',
-  },
-  { symbol: 'sBTC', balance: '12.4583', usd: '625,847.92', change: '+5.1%', barWidth: '78%' },
-  { symbol: 'sETH', balance: '145.2341', usd: '232,251.75', change: '-1.2%', barWidth: '62%' },
+  { symbol: 'sUSDC', balance: '1,245,382.45', usd: '1,245,382.45', change: '+2.3%' },
+  { symbol: 'sBTC', balance: '12.4583', usd: '625,847.92', change: '+5.1%' },
+  { symbol: 'sETH', balance: '145.2341', usd: '232,251.75', change: '-1.2%' },
 ];
 
 const transactions = [
@@ -217,7 +211,7 @@ export default function OverviewPage() {
                   <motion.div
                     className="h-full bg-gradient-to-r from-white/30 to-white/10"
                     initial={{ width: 0 }}
-                    animate={{ width: `${asset.barWidth}` }}
+                    animate={{ width: `${[85, 72, 64][index % 3]}%` }}
                     transition={{ duration: 1, delay: 0.5 + index * 0.1 }}
                   />
                 </div>
