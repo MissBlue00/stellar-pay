@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { HealthModule } from './health/health.module';
 import { TreasuryModule } from './treasury/treasury.module';
 import { AuthModule } from './auth/auth.module';
+import { ApikeysModule } from './apikeys/apikeys.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { ThrottlerRedisGuard } from './rate-limiter/guards/throttler-redis.guard';
 
@@ -14,6 +15,7 @@ import { ThrottlerRedisGuard } from './rate-limiter/guards/throttler-redis.guard
     HealthModule,
     TreasuryModule,
     AuthModule,
+    ApikeysModule,
     ThrottlerModule.forRoot({
       throttlers: [
         { name: 'short', ttl: 60000, limit: 100 },
