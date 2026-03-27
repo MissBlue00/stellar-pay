@@ -10,7 +10,8 @@
   "scripts": {
     "build": "tsup src/index.ts --format cjs,esm --dts --clean",
     "dev": "tsup src/index.ts --format cjs,esm --watch --dts",
-    "lint": "eslint \"src/**/*.ts\""
+    "lint": "eslint \"src/**/*.ts\"",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "tsup": "^8.0.0",
