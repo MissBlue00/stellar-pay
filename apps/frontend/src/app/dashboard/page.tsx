@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from "motion/react";
+import { motion } from 'motion/react';
 import {
   TrendingUp,
   TrendingDown,
@@ -10,90 +10,90 @@ import {
   Clock,
   CheckCircle2,
   AlertCircle,
-} from "lucide-react";
+} from 'lucide-react';
 
 const stats = [
   {
-    label: "Total Volume (30d)",
-    value: "$12,847,392.45",
-    change: "+18.2%",
-    trend: "up",
+    label: 'Total Volume (30d)',
+    value: '$12,847,392.45',
+    change: '+18.2%',
+    trend: 'up',
     icon: DollarSign,
   },
   {
-    label: "Settlement Balance",
-    value: "$2,103,482.12",
-    change: "+5.4%",
-    trend: "up",
+    label: 'Settlement Balance',
+    value: '$2,103,482.12',
+    change: '+5.4%',
+    trend: 'up',
     icon: Activity,
   },
   {
-    label: "Pending Settlements",
-    value: "47",
-    change: "-12.3%",
-    trend: "down",
+    label: 'Pending Settlements',
+    value: '47',
+    change: '-12.3%',
+    trend: 'down',
     icon: Clock,
   },
   {
-    label: "Reserve Ratio",
-    value: "127.3%",
-    change: "+2.1%",
-    trend: "up",
+    label: 'Reserve Ratio',
+    value: '127.3%',
+    change: '+2.1%',
+    trend: 'up',
     icon: CheckCircle2,
   },
 ];
 
 const assets = [
-  { symbol: "sUSDC", balance: "1,245,382.45", usd: "1,245,382.45", change: "+2.3%" },
-  { symbol: "sBTC", balance: "12.4583", usd: "625,847.92", change: "+5.1%" },
-  { symbol: "sETH", balance: "145.2341", usd: "232,251.75", change: "-1.2%" },
+  { symbol: 'sUSDC', balance: '1,245,382.45', usd: '1,245,382.45', change: '+2.3%' },
+  { symbol: 'sBTC', balance: '12.4583', usd: '625,847.92', change: '+5.1%' },
+  { symbol: 'sETH', balance: '145.2341', usd: '232,251.75', change: '-1.2%' },
 ];
 
 const transactions = [
   {
-    id: "pay_9k2j3n4k5j6h",
-    type: "Payment",
-    asset: "sUSDC",
-    amount: "+12,450.00",
-    status: "completed",
-    time: "2m ago",
-    hash: "0x7a8f9b2c...4e5d6f1a",
+    id: 'pay_9k2j3n4k5j6h',
+    type: 'Payment',
+    asset: 'sUSDC',
+    amount: '+12,450.00',
+    status: 'completed',
+    time: '2m ago',
+    hash: '0x7a8f9b2c...4e5d6f1a',
   },
   {
-    id: "pay_8h1j2k3l4m5n",
-    type: "Redemption",
-    asset: "sBTC",
-    amount: "-0.2341",
-    status: "completed",
-    time: "5m ago",
-    hash: "0x3c4d5e6f...7a8b9c0d",
+    id: 'pay_8h1j2k3l4m5n',
+    type: 'Redemption',
+    asset: 'sBTC',
+    amount: '-0.2341',
+    status: 'completed',
+    time: '5m ago',
+    hash: '0x3c4d5e6f...7a8b9c0d',
   },
   {
-    id: "pay_7g8h9i0j1k2l",
-    type: "Payment",
-    asset: "sETH",
-    amount: "+5.4321",
-    status: "pending",
-    time: "8m ago",
-    hash: "0x1a2b3c4d...5e6f7g8h",
+    id: 'pay_7g8h9i0j1k2l',
+    type: 'Payment',
+    asset: 'sETH',
+    amount: '+5.4321',
+    status: 'pending',
+    time: '8m ago',
+    hash: '0x1a2b3c4d...5e6f7g8h',
   },
   {
-    id: "pay_6f7g8h9i0j1k",
-    type: "Settlement",
-    asset: "sUSDC",
-    amount: "-8,230.50",
-    status: "completed",
-    time: "12m ago",
-    hash: "0x9h8g7f6e...5d4c3b2a",
+    id: 'pay_6f7g8h9i0j1k',
+    type: 'Settlement',
+    asset: 'sUSDC',
+    amount: '-8,230.50',
+    status: 'completed',
+    time: '12m ago',
+    hash: '0x9h8g7f6e...5d4c3b2a',
   },
   {
-    id: "pay_5e6f7g8h9i0j",
-    type: "Payment",
-    asset: "sBTC",
-    amount: "+0.1234",
-    status: "completed",
-    time: "15m ago",
-    hash: "0x2b3c4d5e...6f7g8h9i",
+    id: 'pay_5e6f7g8h9i0j',
+    type: 'Payment',
+    asset: 'sBTC',
+    amount: '+0.1234',
+    status: 'completed',
+    time: '15m ago',
+    hash: '0x2b3c4d5e...6f7g8h9i',
   },
 ];
 
@@ -109,9 +109,7 @@ export default function OverviewPage() {
         >
           Overview
         </motion.h1>
-        <p className="text-sm text-neutral-400">
-          Real-time metrics and settlement status
-        </p>
+        <p className="text-sm text-neutral-400">Real-time metrics and settlement status</p>
       </div>
 
       {/* Stats Grid */}
@@ -136,17 +134,17 @@ export default function OverviewPage() {
                 repeatDelay: 2,
               }}
             />
-            
+
             <div className="flex items-start justify-between mb-4 relative z-10">
               <div className="p-2 bg-white/5 rounded-lg">
                 <stat.icon className="size-5 text-white" />
               </div>
               <div
                 className={`flex items-center gap-1 text-xs ${
-                  stat.trend === "up" ? "text-green-400" : "text-red-400"
+                  stat.trend === 'up' ? 'text-green-400' : 'text-red-400'
                 }`}
               >
-                {stat.trend === "up" ? (
+                {stat.trend === 'up' ? (
                   <TrendingUp className="size-3" />
                 ) : (
                   <TrendingDown className="size-3" />
@@ -154,7 +152,7 @@ export default function OverviewPage() {
                 {stat.change}
               </div>
             </div>
-            
+
             <div className="relative z-10">
               <div className="text-2xl sm:text-3xl font-medium mb-1">{stat.value}</div>
               <div className="text-xs text-neutral-500">{stat.label}</div>
@@ -200,7 +198,9 @@ export default function OverviewPage() {
                   </div>
                   <div className="text-right">
                     <div className="font-medium">${asset.usd}</div>
-                    <div className={`text-sm ${asset.change.startsWith('+') ? 'text-green-400' : 'text-red-400'}`}>
+                    <div
+                      className={`text-sm ${asset.change.startsWith('+') ? 'text-green-400' : 'text-red-400'}`}
+                    >
                       {asset.change}
                     </div>
                   </div>
@@ -211,7 +211,7 @@ export default function OverviewPage() {
                   <motion.div
                     className="h-full bg-gradient-to-r from-white/30 to-white/10"
                     initial={{ width: 0 }}
-                    animate={{ width: `${Math.random() * 40 + 60}%` }}
+                    animate={{ width: `${[85, 72, 64][index % 3]}%` }}
                     transition={{ duration: 1, delay: 0.5 + index * 0.1 }}
                   />
                 </div>
@@ -228,7 +228,7 @@ export default function OverviewPage() {
           transition={{ delay: 0.3 }}
         >
           <h2 className="text-lg font-medium mb-6">Reserve Health</h2>
-          
+
           <div className="flex items-center justify-center mb-6">
             <div className="relative w-40 h-40">
               {/* Background circle */}
@@ -249,9 +249,9 @@ export default function OverviewPage() {
                   stroke="rgba(255,255,255,0.3)"
                   strokeWidth="12"
                   strokeLinecap="round"
-                  initial={{ strokeDasharray: "0 440" }}
-                  animate={{ strokeDasharray: "350 440" }}
-                  transition={{ duration: 1.5, ease: "easeOut" }}
+                  initial={{ strokeDasharray: '0 440' }}
+                  animate={{ strokeDasharray: '350 440' }}
+                  transition={{ duration: 1.5, ease: 'easeOut' }}
                 />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -336,18 +336,20 @@ export default function OverviewPage() {
                       {tx.asset}
                     </span>
                   </td>
-                  <td className={`py-3 px-4 font-medium ${tx.amount.startsWith('+') ? 'text-green-400' : 'text-red-400'}`}>
+                  <td
+                    className={`py-3 px-4 font-medium ${tx.amount.startsWith('+') ? 'text-green-400' : 'text-red-400'}`}
+                  >
                     {tx.amount}
                   </td>
                   <td className="py-3 px-4">
                     <span
                       className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${
-                        tx.status === "completed"
-                          ? "bg-green-400/10 text-green-400"
-                          : "bg-yellow-400/10 text-yellow-400"
+                        tx.status === 'completed'
+                          ? 'bg-green-400/10 text-green-400'
+                          : 'bg-yellow-400/10 text-yellow-400'
                       }`}
                     >
-                      {tx.status === "completed" ? (
+                      {tx.status === 'completed' ? (
                         <CheckCircle2 className="size-3" />
                       ) : (
                         <AlertCircle className="size-3" />
