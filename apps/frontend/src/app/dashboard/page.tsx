@@ -136,15 +136,14 @@ export default function OverviewPage() {
                 repeatDelay: 2,
               }}
             />
-            
+
             <div className="flex items-start justify-between mb-4 relative z-10">
               <div className="p-2 bg-white/5 rounded-lg">
                 <stat.icon className="size-5 text-white" />
               </div>
               <div
-                className={`flex items-center gap-1 text-xs ${
-                  stat.trend === "up" ? "text-green-400" : "text-red-400"
-                }`}
+                className={`flex items-center gap-1 text-xs ${stat.trend === "up" ? "text-green-400" : "text-red-400"
+                  }`}
               >
                 {stat.trend === "up" ? (
                   <TrendingUp className="size-3" />
@@ -154,7 +153,7 @@ export default function OverviewPage() {
                 {stat.change}
               </div>
             </div>
-            
+
             <div className="relative z-10">
               <div className="text-2xl sm:text-3xl font-medium mb-1">{stat.value}</div>
               <div className="text-xs text-neutral-500">{stat.label}</div>
@@ -228,7 +227,7 @@ export default function OverviewPage() {
           transition={{ delay: 0.3 }}
         >
           <h2 className="text-lg font-medium mb-6">Reserve Health</h2>
-          
+
           <div className="flex items-center justify-center mb-6">
             <div className="relative w-40 h-40">
               {/* Background circle */}
@@ -341,11 +340,10 @@ export default function OverviewPage() {
                   </td>
                   <td className="py-3 px-4">
                     <span
-                      className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${
-                        tx.status === "completed"
+                      className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${tx.status === "completed"
                           ? "bg-green-400/10 text-green-400"
                           : "bg-yellow-400/10 text-yellow-400"
-                      }`}
+                        }`}
                     >
                       {tx.status === "completed" ? (
                         <CheckCircle2 className="size-3" />

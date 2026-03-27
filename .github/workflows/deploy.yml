@@ -40,15 +40,21 @@ jobs:
       active_env: ${{ steps.get-active.outputs.active_env }}
       inactive_env: ${{ steps.get-active.outputs.inactive_env }}
     steps:
+      - uses: actions/checkout@v4
       - id: get-active
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # In a real scenario, this would check a production LB or DNS record.
-          # Here we use a dummy value for simulation.
-          ACTIVE_ENV="blue"
-          INACTIVE_ENV="green"
+          # Fetch the active environment from repository variables.
+          # If not found or error, default to 'blue'.
+          ACTIVE_ENV=$(gh variable get ACTIVE_ENVIRONMENT --repo ${{ github.repository }} || echo "blue")
           
-          # Logic to determine which one is currently live (mocked)
-          # Assume 'blue' is currently live
+          if [ "$ACTIVE_ENV" = "blue" ]; then
+            INACTIVE_ENV="green"
+          else
+            INACTIVE_ENV="blue"
+          fi
+          
           echo "active_env=$ACTIVE_ENV" >> $GITHUB_OUTPUT
           echo "inactive_env=$INACTIVE_ENV" >> $GITHUB_OUTPUT
           echo "Active environment is $ACTIVE_ENV, deploying to $INACTIVE_ENV."
@@ -102,11 +108,17 @@ jobs:
     runs-on: ubuntu-latest
     if: always() && needs.smoke-test.result == 'success'
     steps:
+      - uses: actions/checkout@v4
       - name: Full Traffic Shift
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "Switching 100% of traffic from ${{ needs.determine-env.outputs.active_env }} to ${{ needs.determine-env.outputs.inactive_env }}..."
-          # Mock traffic switch logic
-          sleep 2
+          
+          # In a real scenario, this would update a Load Balancer or DNS.
+          # Here we update the GitHub repository variable to persist the change.
+          gh variable set ACTIVE_ENVIRONMENT --repo ${{ github.repository }} --body "${{ needs.determine-env.outputs.inactive_env }}"
+          
           echo "Traffic switch complete. ${{ needs.determine-env.outputs.inactive_env }} is now live."
 
   rollback:

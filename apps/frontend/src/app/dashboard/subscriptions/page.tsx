@@ -90,9 +90,8 @@ export default function SubscriptionsPage() {
                   <td className="py-4 px-4 text-neutral-400">{sub.interval}</td>
                   <td className="py-4 px-4">
                     <span
-                      className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${
-                        sub.status === "active" ? "bg-green-400/10 text-green-400" : "bg-red-400/10 text-red-400"
-                      }`}
+                      className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${sub.status === "active" ? "bg-green-400/10 text-green-400" : "bg-red-400/10 text-red-400"
+                        }`}
                     >
                       {sub.status === "active" ? <CheckCircle2 className="size-3" /> : <AlertCircle className="size-3" />}
                       {sub.status}

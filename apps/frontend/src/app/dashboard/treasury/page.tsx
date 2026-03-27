@@ -94,7 +94,7 @@ export default function TreasuryPage() {
         transition={{ delay: 0.3 }}
       >
         <h2 className="text-lg font-medium mb-6">Mirror Assets</h2>
-        
+
         <div className="space-y-4">
           {mirrorAssets.map((asset, index) => (
             <motion.div
@@ -160,7 +160,7 @@ export default function TreasuryPage() {
           transition={{ delay: 0.5 }}
         >
           <h2 className="text-lg font-medium mb-6">Recent Burn History</h2>
-          
+
           <div className="space-y-3">
             {burnHistory.map((burn, index) => (
               <motion.div
@@ -193,7 +193,7 @@ export default function TreasuryPage() {
           transition={{ delay: 0.5 }}
         >
           <h2 className="text-lg font-medium mb-6">Liquidity Health Metrics</h2>
-          
+
           <div className="space-y-6">
             {[
               { label: "Overall Health", value: 95, status: "Excellent" },

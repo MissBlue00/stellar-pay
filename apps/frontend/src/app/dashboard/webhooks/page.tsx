@@ -93,9 +93,8 @@ export default function WebhooksPage() {
                   </td>
                   <td className="py-4 px-4">
                     <span
-                      className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${
-                        webhook.status === "active" ? "bg-green-400/10 text-green-400" : "bg-neutral-400/10 text-neutral-400"
-                      }`}
+                      className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${webhook.status === "active" ? "bg-green-400/10 text-green-400" : "bg-neutral-400/10 text-neutral-400"
+                        }`}
                     >
                       {webhook.status === "active" ? <Activity className="size-3" /> : <AlertCircle className="size-3" />}
                       {webhook.status}
