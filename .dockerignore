@@ -1,0 +1,8 @@
+node_modules
+dist
+.turbo
+*.log
+.git
+.idea
+.env
+coverage
