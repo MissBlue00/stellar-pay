@@ -29,8 +29,10 @@
     "@stellar/stellar-sdk": "^14.6.1",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
+    "@nestjs/swagger": "^11.2.6",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
