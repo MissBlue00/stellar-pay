@@ -1,12 +1,33 @@
 'use client';
 
-import { motion } from "motion/react";
-import { Plus, CheckCircle2, AlertCircle, Activity } from "lucide-react";
+import { motion } from 'motion/react';
+import { Plus, AlertCircle, Activity } from 'lucide-react';
 
 const webhooks = [
-  { id: "wh_1a2b3c", endpoint: "https://api.acmecorp.com/webhooks", events: ["payment.completed", "settlement.pending"], status: "active", lastTriggered: "2m ago", hash: "0x7a8f9b...4e5d" },
-  { id: "wh_4d5e6f", endpoint: "https://api.techstart.io/hooks", events: ["payment.failed", "subscription.renewed"], status: "active", lastTriggered: "15m ago", hash: "0x3c4d5e...7a8b" },
-  { id: "wh_7g8h9i", endpoint: "https://hooks.buildco.dev/stellar", events: ["escrow.released"], status: "inactive", lastTriggered: "2h ago", hash: "0x1a2b3c...5e6f" },
+  {
+    id: 'wh_1a2b3c',
+    endpoint: 'https://api.acmecorp.com/webhooks',
+    events: ['payment.completed', 'settlement.pending'],
+    status: 'active',
+    lastTriggered: '2m ago',
+    hash: '0x7a8f9b...4e5d',
+  },
+  {
+    id: 'wh_4d5e6f',
+    endpoint: 'https://api.techstart.io/hooks',
+    events: ['payment.failed', 'subscription.renewed'],
+    status: 'active',
+    lastTriggered: '15m ago',
+    hash: '0x3c4d5e...7a8b',
+  },
+  {
+    id: 'wh_7g8h9i',
+    endpoint: 'https://hooks.buildco.dev/stellar',
+    events: ['escrow.released'],
+    status: 'inactive',
+    lastTriggered: '2h ago',
+    hash: '0x1a2b3c...5e6f',
+  },
 ];
 
 export default function WebhooksPage() {
@@ -20,14 +41,16 @@ export default function WebhooksPage() {
         >
           Webhooks
         </motion.h1>
-        <p className="text-sm text-neutral-400">Configure event notifications with on-chain proof</p>
+        <p className="text-sm text-neutral-400">
+          Configure event notifications with on-chain proof
+        </p>
       </div>
 
       <div className="grid sm:grid-cols-3 gap-4 mb-8">
         {[
-          { label: "Active Webhooks", value: "2" },
-          { label: "Total Deliveries", value: "1,247" },
-          { label: "Success Rate", value: "99.8%" },
+          { label: 'Active Webhooks', value: '2' },
+          { label: 'Total Deliveries', value: '1,247' },
+          { label: 'Success Rate', value: '99.8%' },
         ].map((stat, index) => (
           <motion.div
             key={stat.label}
@@ -42,11 +65,7 @@ export default function WebhooksPage() {
         ))}
       </div>
 
-      <motion.div
-        className="mb-6"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
+      <motion.div className="mb-6" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <button className="px-4 py-3 bg-white text-black rounded-lg hover:bg-neutral-200 transition-all flex items-center gap-2 font-medium cursor-pointer">
           <Plus className="size-4" />
           Add Webhook
@@ -85,7 +104,10 @@ export default function WebhooksPage() {
                   <td className="py-4 px-4">
                     <div className="flex flex-wrap gap-1">
                       {webhook.events.slice(0, 2).map((event) => (
-                        <span key={event} className="px-2 py-1 bg-white/5 rounded text-xs whitespace-nowrap">
+                        <span
+                          key={event}
+                          className="px-2 py-1 bg-white/5 rounded text-xs whitespace-nowrap"
+                        >
                           {event}
                         </span>
                       ))}
@@ -94,10 +116,16 @@ export default function WebhooksPage() {
                   <td className="py-4 px-4">
                     <span
                       className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${
-                        webhook.status === "active" ? "bg-green-400/10 text-green-400" : "bg-neutral-400/10 text-neutral-400"
+                        webhook.status === 'active'
+                          ? 'bg-green-400/10 text-green-400'
+                          : 'bg-neutral-400/10 text-neutral-400'
                       }`}
                     >
-                      {webhook.status === "active" ? <Activity className="size-3" /> : <AlertCircle className="size-3" />}
+                      {webhook.status === 'active' ? (
+                        <Activity className="size-3" />
+                      ) : (
+                        <AlertCircle className="size-3" />
+                      )}
                       {webhook.status}
                     </span>
                   </td>
