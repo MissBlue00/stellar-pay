@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from "motion/react";
-import { Plus, RefreshCw, CheckCircle2, AlertCircle } from "lucide-react";
+import { Plus, CheckCircle2, AlertCircle } from "lucide-react";
 
 const subscriptions = [
   { id: "sub_1a2b3c4d", customer: "Acme Corp", plan: "Enterprise", amount: "999.00", interval: "Monthly", status: "active", nextBilling: "2026-04-03" },

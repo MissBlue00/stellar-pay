@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from "motion/react";
-import { Plus, CheckCircle2, AlertCircle, Activity } from "lucide-react";
+import { Plus, AlertCircle, Activity } from "lucide-react";
 
 const webhooks = [
   { id: "wh_1a2b3c", endpoint: "https://api.acmecorp.com/webhooks", events: ["payment.completed", "settlement.pending"], status: "active", lastTriggered: "2m ago", hash: "0x7a8f9b...4e5d" },
