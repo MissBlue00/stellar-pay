@@ -6,11 +6,13 @@ import { AppService } from './app.service';
 import { HealthModule } from './health/health.module';
 import { TreasuryModule } from './treasury/treasury.module';
 import { AuthModule } from './auth/auth.module';
+import { AuditLogModule } from './audit-log/audit-log.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { ThrottlerRedisGuard } from './rate-limiter/guards/throttler-redis.guard';
 
 @Module({
   imports: [
+    AuditLogModule,
     HealthModule,
     TreasuryModule,
     AuthModule,
