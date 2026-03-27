@@ -511,7 +511,7 @@ export default function PaymentCheckout() {
                             onClick={handleBankPayment}
                             className="w-full bg-white hover:bg-zinc-100 text-black h-14 rounded-xl mt-6 text-base transition-all duration-200 shadow-lg shadow-white/10"
                           >
-                            I've Completed the Transfer
+                            I&apos;ve Completed the Transfer
                           </Button>
 
                           <p className="text-xs text-zinc-500 text-center pt-2">
@@ -611,7 +611,7 @@ export default function PaymentCheckout() {
                             onClick={handleCryptoDetection}
                             className="w-full bg-white hover:bg-zinc-100 text-black h-14 rounded-xl mt-6 text-base transition-all duration-200 shadow-lg shadow-white/10"
                           >
-                            I've Sent the Payment
+                            I&apos;ve Sent the Payment
                           </Button>
 
                           <p className="text-xs text-zinc-500 text-center pt-2">
