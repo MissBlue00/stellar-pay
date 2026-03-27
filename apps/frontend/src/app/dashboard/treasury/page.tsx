@@ -1,46 +1,46 @@
 'use client';
 
-import { motion } from "motion/react";
-import { Coins, TrendingUp, TrendingDown, Eye, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { motion } from 'motion/react';
+import { Coins, TrendingUp, Eye, CheckCircle2 } from 'lucide-react';
 
 const mirrorAssets = [
   {
-    symbol: "sUSDC",
-    name: "Stellar USDC",
-    balance: "1,245,382.45",
-    usdValue: "1,245,382.45",
-    reserves: "1,286,529.42",
-    reserveRatio: "103.3%",
+    symbol: 'sUSDC',
+    name: 'Stellar USDC',
+    balance: '1,245,382.45',
+    usdValue: '1,245,382.45',
+    reserves: '1,286,529.42',
+    reserveRatio: '103.3%',
     redeemable: true,
-    burnHistory: "342 burns",
+    burnHistory: '342 burns',
   },
   {
-    symbol: "sBTC",
-    name: "Stellar Bitcoin",
-    balance: "12.4583",
-    usdValue: "625,847.92",
-    reserves: "12.8731",
-    reserveRatio: "103.3%",
+    symbol: 'sBTC',
+    name: 'Stellar Bitcoin',
+    balance: '12.4583',
+    usdValue: '625,847.92',
+    reserves: '12.8731',
+    reserveRatio: '103.3%',
     redeemable: true,
-    burnHistory: "87 burns",
+    burnHistory: '87 burns',
   },
   {
-    symbol: "sETH",
-    name: "Stellar Ethereum",
-    balance: "145.2341",
-    usdValue: "232,251.75",
-    reserves: "150.1248",
-    reserveRatio: "103.4%",
+    symbol: 'sETH',
+    name: 'Stellar Ethereum',
+    balance: '145.2341',
+    usdValue: '232,251.75',
+    reserves: '150.1248',
+    reserveRatio: '103.4%',
     redeemable: true,
-    burnHistory: "156 burns",
+    burnHistory: '156 burns',
   },
 ];
 
 const burnHistory = [
-  { date: "2026-03-03 14:32", asset: "sUSDC", amount: "5,000.00", hash: "0x7a8f9b...4e5d6f" },
-  { date: "2026-03-03 12:15", asset: "sBTC", amount: "0.1234", hash: "0x3c4d5e...7a8b9c" },
-  { date: "2026-03-03 09:42", asset: "sETH", amount: "2.5000", hash: "0x1a2b3c...5e6f7g" },
-  { date: "2026-03-02 18:20", asset: "sUSDC", amount: "12,450.00", hash: "0x9h8g7f...5d4c3b" },
+  { date: '2026-03-03 14:32', asset: 'sUSDC', amount: '5,000.00', hash: '0x7a8f9b...4e5d6f' },
+  { date: '2026-03-03 12:15', asset: 'sBTC', amount: '0.1234', hash: '0x3c4d5e...7a8b9c' },
+  { date: '2026-03-03 09:42', asset: 'sETH', amount: '2.5000', hash: '0x1a2b3c...5e6f7g' },
+  { date: '2026-03-02 18:20', asset: 'sUSDC', amount: '12,450.00', hash: '0x9h8g7f...5d4c3b' },
 ];
 
 export default function TreasuryPage() {
@@ -55,18 +55,16 @@ export default function TreasuryPage() {
         >
           Treasury
         </motion.h1>
-        <p className="text-sm text-neutral-400">
-          Manage mirror assets, reserves, and redemptions
-        </p>
+        <p className="text-sm text-neutral-400">Manage mirror assets, reserves, and redemptions</p>
       </div>
 
       {/* Treasury Overview */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
-          { label: "Total Treasury Value", value: "$2,103,482.12", icon: Coins },
-          { label: "Reserve Backing", value: "$2,173,402.45", icon: CheckCircle2 },
-          { label: "Liquidity Health", value: "Excellent", icon: TrendingUp },
-          { label: "Active Assets", value: "3", icon: Coins },
+          { label: 'Total Treasury Value', value: '$2,103,482.12', icon: Coins },
+          { label: 'Reserve Backing', value: '$2,173,402.45', icon: CheckCircle2 },
+          { label: 'Liquidity Health', value: 'Excellent', icon: TrendingUp },
+          { label: 'Active Assets', value: '3', icon: Coins },
         ].map((stat, index) => (
           <motion.div
             key={stat.label}
@@ -94,7 +92,7 @@ export default function TreasuryPage() {
         transition={{ delay: 0.3 }}
       >
         <h2 className="text-lg font-medium mb-6">Mirror Assets</h2>
-        
+
         <div className="space-y-4">
           {mirrorAssets.map((asset, index) => (
             <motion.div
@@ -160,7 +158,7 @@ export default function TreasuryPage() {
           transition={{ delay: 0.5 }}
         >
           <h2 className="text-lg font-medium mb-6">Recent Burn History</h2>
-          
+
           <div className="space-y-3">
             {burnHistory.map((burn, index) => (
               <motion.div
@@ -171,7 +169,9 @@ export default function TreasuryPage() {
                 transition={{ delay: 0.6 + index * 0.05 }}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="px-2 py-1 bg-white/5 rounded text-xs font-medium">{burn.asset}</span>
+                  <span className="px-2 py-1 bg-white/5 rounded text-xs font-medium">
+                    {burn.asset}
+                  </span>
                   <span className="text-xs text-neutral-500">{burn.date}</span>
                 </div>
                 <div className="flex items-center justify-between">
@@ -193,12 +193,12 @@ export default function TreasuryPage() {
           transition={{ delay: 0.5 }}
         >
           <h2 className="text-lg font-medium mb-6">Liquidity Health Metrics</h2>
-          
+
           <div className="space-y-6">
             {[
-              { label: "Overall Health", value: 95, status: "Excellent" },
-              { label: "Reserve Coverage", value: 103, status: "Strong" },
-              { label: "Redemption Capacity", value: 88, status: "Good" },
+              { label: 'Overall Health', value: 95, status: 'Excellent' },
+              { label: 'Reserve Coverage', value: 103, status: 'Strong' },
+              { label: 'Redemption Capacity', value: 88, status: 'Good' },
             ].map((metric, index) => (
               <div key={metric.label}>
                 <div className="flex items-center justify-between mb-2">
