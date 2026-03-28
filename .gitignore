@@ -34,3 +34,5 @@ coverage/
 # TypeScript
 *.tsbuildinfo
 target
+
+issue.md
