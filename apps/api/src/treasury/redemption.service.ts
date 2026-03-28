@@ -17,8 +17,7 @@ export class RedemptionService {
 
   private readonly STELLAR_HORIZON_URL =
     process.env.STELLAR_HORIZON_URL ?? 'https://horizon-testnet.stellar.org';
-  private readonly SOROBAN_RPC_URL =
-    process.env.SOROBAN_RPC_URL ?? 'https://soroban-testnet.stellar.org';
+  // TODO: pass process.env.SOROBAN_RPC_URL to SorobanRpc.Server once contract is deployed
   private readonly BURN_CONTRACT_ID = process.env.BURN_CONTRACT_ID ?? '';
 
   /** In-memory withdrawal queue — replace with a real queue (BullMQ, SQS, etc.) */
@@ -125,9 +124,9 @@ export class RedemptionService {
   // Step 2 helper: call the Soroban burn function
   // ---------------------------------------------------------------------------
   private async invokeBurn(
-    merchantWallet: string,
-    assetCode: string,
-    amount: string,
+    _merchantWallet: string,
+    _assetCode: string,
+    _amount: string,
   ): Promise<string> {
     if (!this.BURN_CONTRACT_ID) {
       // Contract not yet deployed — return a placeholder hash in dev/test
