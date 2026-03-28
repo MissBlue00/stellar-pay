@@ -13,6 +13,7 @@
     "lint": "eslint \"src/**/*.ts\""
   },
   "devDependencies": {
+    "@types/node": "^22.10.0",
     "tsup": "^8.0.0",
     "typescript": "^5.0.0"
   }
