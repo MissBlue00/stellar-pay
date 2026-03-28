@@ -1,0 +1,255 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MerchantStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum PaymentIntentStatus {
+  REQUIRES_PAYMENT_METHOD
+  PROCESSING
+  SUCCEEDED
+  CANCELED
+  FAILED
+}
+
+enum EscrowStatus {
+  PENDING
+  FUNDED
+  RELEASED
+  REFUNDED
+  FAILED
+}
+
+enum SubscriptionInterval {
+  DAY
+  WEEK
+  MONTH
+  YEAR
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  ENDED
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  VOID
+  FAILED
+}
+
+enum PayoutStatus {
+  REQUESTED
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELED
+}
+
+enum WebhookStatus {
+  RECEIVED
+  PROCESSED
+  FAILED
+}
+
+model Merchant {
+  id             String            @id @default(cuid())
+  name           String
+  legalName      String?
+  email          String?           @unique
+  status         MerchantStatus    @default(ACTIVE)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  users          MerchantUser[]
+  customers      Customer[]
+  paymentIntents PaymentIntent[]
+  subscriptions  Subscription[]
+  treasuryWallets TreasuryWallet[]
+  payouts        Payout[]
+  webhookEvents  WebhookEvent[]
+}
+
+model MerchantUser {
+  id         String   @id @default(cuid())
+  merchantId String
+  email      String   @unique
+  fullName   String?
+  role       UserRole @default(MEMBER)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@index([merchantId])
+}
+
+model Customer {
+  id          String         @id @default(cuid())
+  merchantId  String
+  externalRef String?
+  email       String?
+  name        String?
+  metadata    Json?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  merchant    Merchant       @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  paymentIntents PaymentIntent[]
+  subscriptions Subscription[]
+
+  @@unique([merchantId, externalRef])
+  @@index([merchantId])
+}
+
+model PaymentIntent {
+  id             String              @id @default(cuid())
+  merchantId     String
+  customerId     String?
+  amountMinor    Int
+  currency       String              @db.VarChar(3)
+  status         PaymentIntentStatus @default(REQUIRES_PAYMENT_METHOD)
+  paymentMethod  String?
+  description    String?
+  clientSecret   String              @default(uuid()) @unique
+  idempotencyKey String?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  merchant       Merchant            @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  customer       Customer?           @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  escrowTransaction EscrowTransaction?
+  subscriptionInvoices SubscriptionInvoice[]
+
+  @@unique([merchantId, idempotencyKey])
+  @@index([merchantId])
+  @@index([customerId])
+}
+
+model EscrowTransaction {
+  id              String       @id @default(cuid())
+  paymentIntentId String       @unique
+  network         String       @default("stellar")
+  escrowAddress   String?
+  txHash          String?
+  status          EscrowStatus @default(PENDING)
+  fundedAt        DateTime?
+  releasedAt      DateTime?
+  refundedAt      DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  paymentIntent   PaymentIntent @relation(fields: [paymentIntentId], references: [id], onDelete: Cascade)
+}
+
+model Subscription {
+  id                  String               @id @default(cuid())
+  merchantId          String
+  customerId          String
+  planCode            String
+  amountMinor         Int
+  currency            String               @db.VarChar(3)
+  interval            SubscriptionInterval
+  status              SubscriptionStatus   @default(TRIALING)
+  currentPeriodStart  DateTime
+  currentPeriodEnd    DateTime
+  cancelAtPeriodEnd   Boolean              @default(false)
+  canceledAt          DateTime?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  merchant            Merchant             @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  customer            Customer             @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  invoices            SubscriptionInvoice[]
+
+  @@index([merchantId])
+  @@index([customerId])
+}
+
+model SubscriptionInvoice {
+  id                      String            @id @default(cuid())
+  subscriptionId          String
+  externalPaymentIntentId String?           @unique
+  amountMinor             Int
+  currency                String            @db.VarChar(3)
+  status                  InvoiceStatus     @default(PENDING)
+  dueAt                   DateTime
+  paidAt                  DateTime?
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt
+  subscription            Subscription      @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  paymentIntent           PaymentIntent?    @relation(fields: [externalPaymentIntentId], references: [id], onDelete: SetNull)
+
+  @@index([subscriptionId])
+}
+
+model TreasuryWallet {
+  id              String   @id @default(cuid())
+  merchantId      String
+  network         String   @default("stellar")
+  publicKey       String   @unique
+  encryptedSecret String
+  isPrimary       Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  merchant        Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@index([merchantId])
+}
+
+model Payout {
+  id               String      @id @default(cuid())
+  merchantId       String
+  amountMinor      Int
+  currency         String      @db.VarChar(3)
+  destination      String
+  status           PayoutStatus @default(REQUESTED)
+  requestedAt      DateTime    @default(now())
+  processedAt      DateTime?
+  txHash           String?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  merchant         Merchant    @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@index([merchantId])
+}
+
+model WebhookEvent {
+  id          String        @id @default(cuid())
+  merchantId  String?
+  provider    String
+  eventType   String
+  payload     Json
+  status      WebhookStatus @default(RECEIVED)
+  processedAt DateTime?
+  createdAt   DateTime      @default(now())
+  merchant    Merchant?      @relation(fields: [merchantId], references: [id], onDelete: SetNull)
+
+  @@index([merchantId])
+}
+
+model AuditLog {
+  id         BigInt   @id @default(autoincrement())
+  actorType  String
+  actorId    String?
+  action     String
+  entityType String
+  entityId   String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+}
