@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { ThrottlerRedisGuard } from './rate-limiter/guards/throttler-redis.guard';
 import { TransactionsModule } from './transactions/transactions.module';
+import { WorkerModule } from './modules/worker/worker.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { TransactionsModule } from './transactions/transactions.module';
     TreasuryModule,
     AuthModule,
     TransactionsModule,
+    WorkerModule,
     ThrottlerModule.forRoot({
       throttlers: [
         { name: 'short', ttl: 60000, limit: 100 },
