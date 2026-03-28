@@ -1,5 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 import { HealthCheck, HealthCheckService, HealthCheckResult } from '@nestjs/terminus';
+import { Public } from '../auth/decorators/public.decorator';
 import { DatabaseHealthIndicator } from './indicators/database.health';
 import { RedisHealthIndicator } from './indicators/redis.health';
 import { BlockchainRpcHealthIndicator } from './indicators/blockchain-rpc.health';
@@ -16,6 +17,7 @@ export class HealthController {
   ) {}
 
   @Get()
+  @Public()
   @HealthCheck()
   check(): Promise<HealthCheckResult> {
     return this.health.check([
