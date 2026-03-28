@@ -308,11 +308,10 @@ export default function PaymentCheckout() {
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                             onClick={() => setPaymentMethod(method.id)}
-                            className={`relative p-5 rounded-2xl border transition-all duration-300 ${
-                              paymentMethod === method.id
+                            className={`relative p-5 rounded-2xl border transition-all duration-300 ${paymentMethod === method.id
                                 ? 'border-white bg-white/5 shadow-lg shadow-white/5'
                                 : 'border-zinc-800/50 hover:border-zinc-700 bg-zinc-900/30'
-                            }`}
+                              }`}
                           >
                             {paymentMethod === method.id && (
                               <motion.div
@@ -323,15 +322,13 @@ export default function PaymentCheckout() {
                             )}
                             <div className="relative">
                               <method.icon
-                                className={`w-6 h-6 mx-auto mb-3 transition-colors ${
-                                  paymentMethod === method.id ? 'text-white' : 'text-zinc-500'
-                                }`}
+                                className={`w-6 h-6 mx-auto mb-3 transition-colors ${paymentMethod === method.id ? 'text-white' : 'text-zinc-500'
+                                  }`}
                                 strokeWidth={1.5}
                               />
                               <div
-                                className={`text-sm transition-colors ${
-                                  paymentMethod === method.id ? 'text-white' : 'text-zinc-400'
-                                }`}
+                                className={`text-sm transition-colors ${paymentMethod === method.id ? 'text-white' : 'text-zinc-400'
+                                  }`}
                               >
                                 {method.label}
                               </div>
@@ -671,11 +668,10 @@ export default function PaymentCheckout() {
                           className="flex items-center"
                         >
                           <div
-                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
-                              confirmations >= item.step
+                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${confirmations >= item.step
                                 ? 'bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 border border-emerald-500/30'
                                 : 'bg-zinc-900/50 border border-zinc-800/50'
-                            }`}
+                              }`}
                           >
                             {confirmations >= item.step ? (
                               <CheckCircle2 className="w-5 h-5 text-emerald-400" strokeWidth={2} />
@@ -685,9 +681,8 @@ export default function PaymentCheckout() {
                           </div>
                           <div className="ml-4 flex-1">
                             <div
-                              className={`transition-colors ${
-                                confirmations >= item.step ? 'text-white' : 'text-zinc-500'
-                              }`}
+                              className={`transition-colors ${confirmations >= item.step ? 'text-white' : 'text-zinc-500'
+                                }`}
                             >
                               {item.label}
                             </div>
