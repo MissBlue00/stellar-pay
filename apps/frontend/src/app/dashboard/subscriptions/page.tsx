@@ -1,7 +1,7 @@
 'use client';
 
-import { motion } from 'motion/react';
-import { Plus, CheckCircle2, AlertCircle } from 'lucide-react';
+import { motion } from "motion/react";
+import { Plus, CheckCircle2, AlertCircle } from "lucide-react";
 
 const subscriptions = [
   {
@@ -92,7 +92,7 @@ export default function SubscriptionsPage() {
                 <th className="text-left py-4 px-4 text-neutral-500 font-medium">Interval</th>
                 <th className="text-left py-4 px-4 text-neutral-500 font-medium">Status</th>
                 <th className="text-left py-4 px-4 text-neutral-500 font-medium">Next Billing</th>
-              </tr>
+               </tr>
             </thead>
             <tbody>
               {subscriptions.map((sub, index) => (

@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   AlertCircle,
 } from 'lucide-react';
+import { useState } from 'react';
 
 const stats = [
   {
@@ -98,6 +99,12 @@ const transactions = [
 ];
 
 export default function OverviewPage() {
+  // Fixed: Use stable widths instead of Math.random
+  const [assetWidths] = useState(() => assets.map((_, index) => {
+    const widths = [85, 72, 64];
+    return widths[index % widths.length];
+  }));
+
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       {/* Header */}
@@ -211,7 +218,7 @@ export default function OverviewPage() {
                   <motion.div
                     className="h-full bg-gradient-to-r from-white/30 to-white/10"
                     initial={{ width: 0 }}
-                    animate={{ width: `${[85, 72, 64][index % 3]}%` }}
+                    animate={{ width: `${assetWidths[index]}%` }}
                     transition={{ duration: 1, delay: 0.5 + index * 0.1 }}
                   />
                 </div>

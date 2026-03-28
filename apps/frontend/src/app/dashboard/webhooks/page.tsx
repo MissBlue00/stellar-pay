@@ -1,7 +1,7 @@
 'use client';
 
-import { motion } from 'motion/react';
-import { Plus, AlertCircle, Activity } from 'lucide-react';
+import { motion } from "motion/react";
+import { Plus, AlertCircle, Activity } from "lucide-react";
 
 const webhooks = [
   {
@@ -88,7 +88,7 @@ export default function WebhooksPage() {
                 <th className="text-left py-4 px-4 text-neutral-500 font-medium">Status</th>
                 <th className="text-left py-4 px-4 text-neutral-500 font-medium">Last Triggered</th>
                 <th className="text-left py-4 px-4 text-neutral-500 font-medium">Proof Hash</th>
-              </tr>
+               </tr>
             </thead>
             <tbody>
               {webhooks.map((webhook, index) => (

@@ -1,7 +1,7 @@
 'use client';
 
-import { motion } from 'motion/react';
-import { Coins, TrendingUp, Eye, CheckCircle2 } from 'lucide-react';
+import { motion } from "motion/react";
+import { Coins, TrendingUp, Eye, CheckCircle2 } from "lucide-react";
 
 const mirrorAssets = [
   {
