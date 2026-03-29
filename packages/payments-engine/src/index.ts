@@ -1,1 +1,1 @@
-export * from './stellar.service';
+export class StellarService {}
