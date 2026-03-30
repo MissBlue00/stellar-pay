@@ -8,8 +8,7 @@ import { TreasuryModule } from './treasury/treasury.module';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { ThrottlerRedisGuard } from './rate-limiter/guards/throttler-redis.guard';
-import { ConfigModule } from '@nestjs/config';
-import { validate } from './config/env.validation';
+import { WorkerModule } from './modules/worker/worker.module';
 
 @Module({
   imports: [
@@ -20,6 +19,7 @@ import { validate } from './config/env.validation';
     HealthModule,
     TreasuryModule,
     AuthModule,
+    WorkerModule,
     ThrottlerModule.forRoot({
       throttlers: [
         { name: 'short', ttl: 60000, limit: 100 },
