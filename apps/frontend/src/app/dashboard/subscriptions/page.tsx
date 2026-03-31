@@ -1,7 +1,12 @@
 'use client';
 
+<<<<<<< HEAD
 import { motion } from 'motion/react';
 import { Plus, CheckCircle2, AlertCircle } from 'lucide-react';
+=======
+import { AlertCircle, CheckCircle2, Plus } from 'lucide-react';
+import { motion } from 'motion/react';
+>>>>>>> fff37a6 (fix: resolve linting and build errors)
 
 const subscriptions = [
   {

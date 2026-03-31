@@ -1,22 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { QRCodeSVG } from 'qrcode.react';
 import {
-  CreditCard,
   Building2,
+  Check,
+  CheckCircle2,
+  ChevronDown,
+  Clock,
   Coins,
   Copy,
-  CheckCircle2,
-  Shield,
-  Clock,
+  CreditCard,
   ExternalLink,
-  ChevronDown,
   Loader2,
   Lock,
-  Check,
+  Shield,
 } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import { QRCodeSVG } from 'qrcode.react';
+import { useEffect, useState } from 'react';
 import { Button } from '../components/ui/button';
 
 type PaymentMethod = 'card' | 'bank' | 'crypto';

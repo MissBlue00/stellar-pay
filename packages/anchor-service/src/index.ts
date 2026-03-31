@@ -64,7 +64,7 @@ export interface DirectPaymentResult {
   instructions?: {
     action: string;
     url?: string;
-    data?: Record<string, any>;
+    data?: Record<string, unknown>;
   }[];
   /** When the payment was created */
   createdAt: string;
@@ -75,7 +75,36 @@ export interface DirectPaymentResult {
 export interface Sep31Error {
   code: string;
   message: string;
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
+}
+
+interface Sep31Payload {
+  amount: string;
+  asset_code: string;
+  asset_issuer?: string;
+  destination: string;
+  source_account: string;
+  memo?: string;
+  memo_type?: string;
+  sender_info: {
+    id: string;
+    first_name?: string;
+    last_name?: string;
+    email?: string;
+    bank_account?: string;
+    bank_number?: string;
+  };
+  receiver_info: {
+    id: string;
+    first_name?: string;
+    last_name?: string;
+    email?: string;
+    bank_account?: string;
+    bank_number?: string;
+  };
+  original_transaction_ref?: string;
+  callback_url?: string;
+  lang?: string;
 }
 
 /**
@@ -105,7 +134,7 @@ export async function createSep31DirectPayment(
     }
 
     // Prepare the request payload according to SEP-31 specification
-    const payload: Record<string, any> = {
+    const payload: Record<string, unknown> = {
       amount: params.amount,
       asset_code: params.assetCode,
       asset_issuer: params.assetIssuer,
@@ -143,7 +172,7 @@ export async function createSep31DirectPayment(
 
     // In a real implementation, this would make an HTTP request to the anchor's SEP-31 endpoint
     // For now, we'll simulate the response
-    const response = await simulateSep31Request(payload);
+    const response = await simulateSep31Request(payload as unknown as Sep31Payload);
 
     return response;
   } catch (error) {
@@ -162,7 +191,7 @@ export async function createSep31DirectPayment(
  * Simulates a SEP-31 API request to an anchor
  * In production, this would be an actual HTTP request to the anchor's SEP-31 endpoint
  */
-async function simulateSep31Request(payload: any): Promise<DirectPaymentResult> {
+async function simulateSep31Request(payload: Sep31Payload): Promise<DirectPaymentResult> {
   // Simulate network delay
   await new Promise((resolve) => setTimeout(resolve, 1000));
 

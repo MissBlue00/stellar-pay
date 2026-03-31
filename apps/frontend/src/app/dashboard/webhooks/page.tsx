@@ -1,7 +1,12 @@
 'use client';
 
+<<<<<<< HEAD
 import { motion } from 'motion/react';
 import { Plus, AlertCircle, Activity } from 'lucide-react';
+=======
+import { Activity, AlertCircle, Plus } from 'lucide-react';
+import { motion } from 'motion/react';
+>>>>>>> fff37a6 (fix: resolve linting and build errors)
 
 const webhooks = [
   {

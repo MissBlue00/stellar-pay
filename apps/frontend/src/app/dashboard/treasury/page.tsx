@@ -1,7 +1,12 @@
 'use client';
 
+<<<<<<< HEAD
 import { motion } from 'motion/react';
 import { Coins, TrendingUp, Eye, CheckCircle2 } from 'lucide-react';
+=======
+import { CheckCircle2, Coins, Eye, TrendingUp } from 'lucide-react';
+import { motion } from 'motion/react';
+>>>>>>> fff37a6 (fix: resolve linting and build errors)
 
 const mirrorAssets = [
   {

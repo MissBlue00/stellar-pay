@@ -1,16 +1,25 @@
 'use client';
 
+<<<<<<< HEAD
 import { motion } from 'motion/react';
+=======
+>>>>>>> fff37a6 (fix: resolve linting and build errors)
 import {
-  TrendingUp,
-  TrendingDown,
-  ArrowUpRight,
   Activity,
-  DollarSign,
-  Clock,
-  CheckCircle2,
   AlertCircle,
+<<<<<<< HEAD
 } from 'lucide-react';
+=======
+  ArrowUpRight,
+  CheckCircle2,
+  Clock,
+  DollarSign,
+  TrendingDown,
+  TrendingUp,
+} from 'lucide-react';
+import { motion } from 'motion/react';
+import { useMemo } from 'react';
+>>>>>>> fff37a6 (fix: resolve linting and build errors)
 
 const stats = [
   {
@@ -98,6 +107,9 @@ const transactions = [
 ];
 
 export default function OverviewPage() {
+  // Generate random widths for each asset once
+  const assetWidths = assets.map(() => useMemo(() => `${Math.random() * 40 + 60}%`, []));
+
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       {/* Header */}
@@ -211,7 +223,11 @@ export default function OverviewPage() {
                   <motion.div
                     className="h-full bg-gradient-to-r from-white/30 to-white/10"
                     initial={{ width: 0 }}
+<<<<<<< HEAD
                     animate={{ width: `${[85, 72, 64][index % 3]}%` }}
+=======
+                    animate={{ width: assetWidths[index] }}
+>>>>>>> fff37a6 (fix: resolve linting and build errors)
                     transition={{ duration: 1, delay: 0.5 + index * 0.1 }}
                   />
                 </div>
