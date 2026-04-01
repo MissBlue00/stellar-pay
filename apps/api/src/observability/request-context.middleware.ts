@@ -2,7 +2,7 @@ import { Injectable, NestMiddleware } from '@nestjs/common';
 import type { NextFunction, Request, Response } from 'express';
 import { createCorrelationId, runWithRequestContext } from './request-context';
 
-declare module 'express-serve-static-core' {
+declare module 'express' {
   interface Request {
     correlationId?: string;
   }
