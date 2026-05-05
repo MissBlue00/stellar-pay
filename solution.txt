@@ -1,0 +1,256 @@
+We are asked to implement environment configuration and validation for a NestJS backend. The user provides a description and requirements. They want a JSON output with file paths and contents.
+
+Given the context: The repo files listed are about payments-engine and sdk-js. But the issue is about setting up configuration in NestJS using @nestjs/config with schema validation (zod or joi). The files listed might be existing, but we need to create or modify files to implement the configuration module.
+
+The user expects files like app.module.ts, and likely a config module file (e.g., app.config.ts or config/configuration.ts). Also need to modify main.ts to exit on failure. The description says "Implement ConfigModule.forRoot() in app.module.ts." and "Add schema validation using zod or joi." and "Required Variables: ..." and "Failure Policy: The application must exit during startup with a clear error message if validation fails."
+
+Thus, we should produce code for the necessary files.
+
+But we need to consider which files are in the repo? The user lists four files but those seem irrelevant to NestJS configuration; they are packages. The issue is likely in the main backend application, maybe in a different directory not listed. But we don't have an existing structure. We have to create based on typical NestJS structure.
+
+The output should be a JSON object with a 'files' property where each key is a file path and value is the file content.
+
+We need to decide on the file paths. Likely:
+
+- src/app.module.ts (main module, already exists but we modify to configure ConfigModule)
+- src/config/configuration.ts (or app.config.ts) to define the schema and validation.
+- src/main.ts (if needed to handle exit, but NestJS ConfigModule itself can throw error on startup, but we might need to handle graceful exit. The issue says "The application must exit during startup with a clear error message if validation fails." By default, NestJS might crash if validation fails when using ConfigModule.forRoot with validationSchema. But to ensure clean exit we can add a process.exit(1) in the error handling perhaps. However, ConfigModule will throw an exception if validation fails during initialization; NestJS will handle and log and exit? We can rely on that, but maybe we need to add a custom error handler. But the description likely expects minimal code; we can add a validationSchema that throws on missing env vars.
+
+I'll assume we need to create:
+
+- src/config/config.schema.ts (with zod or joi schema)
+- src/config/configuration.ts (normal config)
+- src/app.module.ts (import ConfigModule and configure with validation)
+- src/main.ts (maybe adjust for error handling)
+
+But we also need to ensure that the validation runs and exits on failure. The simplest is to use Joi with ConfigModule.forRoot({ validationSchema: Joi.object({...}) }). That will cause NestJS to throw an error on startup if validation fails, which will cause the process to exit with a non-zero code and error message. That meets the requirement.
+
+I'll use Joi as it's commonly used with @nestjs/config. But req says "using zod or joi". I'll pick Joi.
+
+Thus, files:
+
+- src/app.module.ts (modify existing if any, but we will create as new)
+- src/config/env.validation.ts (Joi schema)
+- src/config/configuration.ts (optional, to define a ConfigService provider? Actually, @nestjs/config provides its own ConfigService. But we might want a custom config that maps env vars to typed object. But not strictly required. We'll keep it simple.)
+
+But the requirement says: "Implement ConfigModule.forRoot() in app.module.ts." So we just do that. Also "Add schema validation using zod or joi." So we can have a separate validation file.
+
+I'll produce:
+
+1. src/app.module.ts
+2. src/config/env.validation.ts
+3. src/main.ts (to show bootstrap; if existed we just ensure proper error handling; but we may not need to modify main.ts if ConfigModule handles exit. I'll include it for completeness.)
+
+Also consider needed dependencies in package.json? But user didn't ask for package.json, only code files.
+
+We need to output JSON with files. So I'll structure the response accordingly.
+
+But the user might expect the files relative to the repo root, but the listed files are under packages. The main backend could be at root or packages/payments-engine. But the issue says "Backend: Implement environment configuration and validation". This could be for the payments-engine? Possibly. But the description says "Implement ConfigModule.forRoot() in app.module.ts." That suggests a NestJS app. The payments-engine appears to be a TypeScript package (src/index.ts) not a NestJS app. However, the dist files suggest compiled output. Maybe the payments-engine is a module within a NestJS backend? Hard to know.
+
+Given the limited info, we should assume we're creating a standard NestJS backend with a typical structure at the root level (or maybe under a backend directory). But the user only gave example of output format: each file path and content. We can choose appropriate paths.
+
+I'll assume the NestJS app is at the root of the repo, and we need to create/modify files in a src/ directory.
+
+Thus:
+
+files = {
+  "src/app.module.ts": "...",
+  "src/config/env.validation.ts": "...",
+  "src/main.ts": "..."
+}
+
+Alternatively, we might include a configuration.ts that provides typed configuration. But validation schema alone is enough. The requirement mentions "Implemented ConfigModule.forRoot() in app.module.ts" and "schema validation using zod or joi". So I'll stick to minimal.
+
+Also, we need to include the listed required variables in the schema.
+
+So for env.validation.ts, we define a Joi schema that validates DATABASE_URL, JWT_SECRET, TREASURY_PRIVATE_KEY, STELLAR_RPC_URL, BTC_NODE_URL, ETH_NODE_URL, REDIS_URL. All are required.
+
+We'll also specify them as strings with appropriate min lengths maybe.
+
+In app.module.ts, we import ConfigModule.forRoot with isGlobal: true (so we can use ConfigService everywhere) and validationSchema.
+
+In main.ts, we bootstrap NestFactory and maybe add a uncaughtException handler? But not required.
+
+I'll include a main.ts that shows how we bootstrap and maybe exit on error if NestFactory fails. However, if ConfigModule validation fails, the app creation itself will throw. So the process exits. So no extra code needed.
+
+I'll also add a .env.example file? Not requested.
+
+Let's produce the code.
+
+Also note: I should use TypeScript syntax.
+
+I'll write:
+
+src/config/env.validation.ts:
+```typescript
+import * as Joi from '@hapi/joi'; // or just 'joi'? commonly use 'joi'
+export const envValidationSchema = Joi.object({
+  DATABASE_URL: Joi.string().required().description('PostgreSQL connection string'),
+  JWT_SECRET: Joi.string().required().min(32).description('Authentication signing key'),
+  TREASURY_PRIVATE_KEY: Joi.string().required().description('Stellar treasury signing key'),
+  STELLAR_RPC_URL: Joi.string().uri().required().description('Horizon/Soroban RPC'),
+  BTC_NODE_URL: Joi.string().uri().required().description('Bitcoin node URL'),
+  ETH_NODE_URL: Joi.string().uri().required().description('Ethereum node URL'),
+  REDIS_URL: Joi.string().uri().required().description('Redis queue URL'),
+});
+```
+
+But @nestjs/config uses joi by default. However, we can also use 'zod'. I'll choose Joi as simpler.
+
+But we need to install @hapi/joi? Actually the package is 'joi'. I'll use 'joi' and import * as Joi from 'joi'. In NestJS docs, they use `joi`.
+
+So:
+```
+import * as Joi from 'joi';
+
+export const envValidationSchema = Joi.object({ ... });
+```
+
+Now app.module.ts:
+```typescript
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { envValidationSchema } from './config/env.validation';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      validationSchema: envValidationSchema,
+      validationOptions: {
+        abortEarly: false, // to see all errors
+      },
+    }),
+    // other modules...
+  ],
+})
+export class AppModule {}
+```
+
+We need to also consider that the application should exit if validation fails. By default, NestJS will throw an error, but the error will be logged and the application will not start. That's sufficient. But if we want to explicitly exit, we can add a listener for `onApplicationShutdown` or use process.exit. I don't think it's needed.
+
+Now main.ts:
+```typescript
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+
+async function bootstrap() {
+  try {
+    const app = await NestFactory.create(AppModule);
+    await app.listen(3000);
+  } catch (error) {
+    console.error('Failed to start application:', error);
+    process.exit(1);
+  }
+}
+bootstrap();
+```
+
+But if ConfigModule validation fails, the error will be caught and logged. However, NestFactory.create will reject with the validation error, and we catch and exit. That makes it explicit.
+
+Alternatively, we can skip the try-catch and let the process exit with error. I'll include explicit catch to show clear error message as per requirement.
+
+Thus output.
+
+But note: The user may want to see the files in the packages/payments-engine directory? The existing files include './packages/payments-engine/src/index.ts' etc. So perhaps the backend NestJS app is not in the packages but at the root? The issue says "Backend: Implement environment configuration and validation". It could be for the whole backend which may be the payments-engine? But the payments-engine seems to be a TypeScript library (with dist and src). Not a NestJS app. The description explicitly mentions "NestJS @nestjs/config". So maybe there is another backend app that uses the payments-engine as a module. Possibly the repo is a monorepo with multiple packages. The issue is likely for the main backend application that uses these packages. That main backend might be at the root or in another directory like 'server' or 'backend'. But we have no indication.
+
+Given that the user only provided a list of files, but those files are irrelevant to the config implementation, we can assume they expect us to create new files in the root of the project, maybe 'src/' structure. Alternatively, we could create the files under 'packages/backend' but again no context.
+
+The safest is to assume a standard NestJS project structure at the root, with src/ containing the main application files.
+
+Thus, I'll output:
+
+```
+{
+  "files": {
+    "src/app.module.ts": "import { Module } from '@nestjs/common...
+    "src/config/env.validation.ts": "import * as Joi from 'joi'...
+    "src/main.ts": "import { NestFactory } from '@nestjs/core'...
+  }
+}
+```
+
+Also consider that we might need to include the existing files updated? The user said "Files in repo: ['./packages/payments-engine/dist/index.js', ...". That's just a list of files present, maybe to give context that the project is structured in packages, but we don't need to edit them. The issue is about setting up config for the backend which is separate.
+
+Thus, I proceed.
+
+I should also note that the schema validation can be done with Zod. Joi is simpler with @nestjs/config because it's integrated. The requirement says "using zod or joi". I'll go with Joi.
+
+Now produce the final JSON.
+
+Make sure to include proper imports and exports.
+
+I'll also add a `.env.example` file? Not required.
+
+But to be thorough, I could include file `src/config/configuration.ts` to provide typed configuration object. But not necessary.
+
+I'll stick to minimal.
+
+Let's write the code properly.
+
+src/config/env.validation.ts:
+
+```
+import * as Joi from 'joi';
+
+export const envValidationSchema = Joi.object({
+  DATABASE_URL: Joi.string().required().description('PostgreSQL connection string'),
+  JWT_SECRET: Joi.string().required().min(32).description('Authentication signing key'),
+  TREASURY_PRIVATE_KEY: Joi.string().required().description('Stellar treasury signing key'),
+  STELLAR_RPC_URL: Joi.string().uri().required().description('Horizon/Soroban RPC'),
+  BTC_NODE_URL: Joi.string().uri().required().description('Bitcoin node URL'),
+  ETH_NODE_URL: Joi.string().uri().required().description('Ethereum node URL'),
+  REDIS_URL: Joi.string().uri().required().description('Redis queue URL'),
+});
+```
+
+src/app.module.ts:
+
+```
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { envValidationSchema } from './config/env.validation';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      validationSchema: envValidationSchema,
+      validationOptions: {
+        abortEarly: false,
+      },
+    }),
+  ],
+})
+export class AppModule {}
+```
+
+src/main.ts:
+
+```
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+
+async function bootstrap() {
+  try {
+    const app = await NestFactory.create(AppModule);
+    await app.listen(3000);
+  } catch (error) {
+    console.error('Application failed to start due to configuration error:', error.message);
+    process.exit(1);
+  }
+}
+bootstrap();
+```
+
+That should satisfy.
+
+Now output JSON.
+
+But we need to ensure the file paths are correct for a typical project. If the project has packages, maybe the main backend is in packages/backend/. But we don't know. The user said "Backend", so perhaps the backend is at root level. I'll go with root.
+
+Also, note that the existing files list includes './packages/payments-engine/dist/index.js' etc. So the root probably has a packages/ directory. The backend might be another package, like 'api-server' or 'backend'. Without specification, it's ambiguous. However, the issue is likely about implementing config for the main backend server, which might be at the root level and not in a package. I'll stick with root.
+
+Alternatively, I could assume that the NestJS backend is in a separate directory, e.g., 'server', but we have no indication. The user expects output with file paths, so I'll choose src/ as common.
+
+Thus final answer.
