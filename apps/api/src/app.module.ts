@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
@@ -9,9 +10,14 @@ import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { ThrottlerRedisGuard } from './rate-limiter/guards/throttler-redis.guard';
 import { WorkerModule } from './modules/worker/worker.module';
+import { validateEnv } from './config/env.config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      validate: validateEnv,
+      isGlobal: true,
+    }),
     HealthModule,
     TreasuryModule,
     AuthModule,
