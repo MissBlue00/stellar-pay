@@ -34,3 +34,7 @@ coverage/
 # TypeScript
 *.tsbuildinfo
 target
+# opencode artifacts
+opencode-server.log
+.opencode
+WAVE_RIDER_TEST_FIX.txt
