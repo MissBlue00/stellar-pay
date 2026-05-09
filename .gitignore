@@ -34,3 +34,6 @@ coverage/
 # TypeScript
 *.tsbuildinfo
 target
+# opencode artifacts
+opencode-server.log
+.opencode
