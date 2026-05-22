@@ -1,8 +1,11 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { AssetReserve } from './interfaces/proof-of-reserves.interface';
 
 @Injectable()
 export class TreasuryService {
+  constructor(private readonly configService: ConfigService) {}
+
   async getTotalSupply(_assetCode: string): Promise<string> {
     // TODO: Implement actual on-chain supply query using @stellar/stellar-sdk
     // Example:
@@ -38,9 +41,10 @@ export class TreasuryService {
   }
 
   async getAssetReserve(assetCode: string): Promise<AssetReserve> {
-    // TODO: Get treasury address from config service
-    // const treasuryAddress = await this.configService.getTreasuryAddress();
-    const treasuryAddress = process.env.TREASURY_WALLET_ADDRESS ?? 'TREASURY_ADDRESS_NOT_SET';
+    const treasuryAddress = this.configService.get<string>(
+      'stellar.treasuryWalletAddress',
+      'TREASURY_ADDRESS_NOT_SET',
+    );
 
     const [totalSupply, treasuryBalance] = await Promise.all([
       this.getTotalSupply(assetCode),

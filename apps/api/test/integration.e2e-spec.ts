@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import request from 'supertest';
 import { App } from 'supertest/types';
@@ -120,10 +121,18 @@ describe('Integration: Registration → Payment → Confirmation → Mint', () =
   let app: INestApplication<App>;
 
   beforeAll(async () => {
-    process.env.JWT_SECRET = JWT_SECRET;
-
     const module: TestingModule = await Test.createTestingModule({
-      imports: [PassportModule.register({ defaultStrategy: 'jwt' })],
+      imports: [
+        ConfigModule.forRoot({
+          isGlobal: true,
+          load: [
+            () => ({
+              jwt: { secret: JWT_SECRET },
+            }),
+          ],
+        }),
+        PassportModule.register({ defaultStrategy: 'jwt' }),
+      ],
       controllers: [RegisterController, PaymentsController, MintController],
       providers: [JwtStrategy, JwtAuthGuard, { provide: APP_GUARD, useClass: JwtAuthGuard }],
     }).compile();

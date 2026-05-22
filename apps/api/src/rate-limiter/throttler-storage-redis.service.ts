@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ThrottlerStorage } from '@nestjs/throttler';
 
 @Injectable()
 export class ThrottlerStorageRedisService implements ThrottlerStorage {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private client: any = null;
+
+  constructor(private readonly configService: ConfigService) {}
 
   private async getClient() {
     if (this.client) return this.client;
@@ -12,7 +14,8 @@ export class ThrottlerStorageRedisService implements ThrottlerStorage {
     // TODO: Inject Redis client when Redis service is implemented
     // Example:
     // if (!this.client) {
-    //   this.client = await createClient(process.env.REDIS_URL).connect();
+    //   const redisUrl = this.configService.get<string>('redis.url');
+    //   this.client = await createClient(redisUrl).connect();
     // }
 
     return null;
