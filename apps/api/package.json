@@ -32,6 +32,7 @@
     "@nestjs/swagger": "^11.2.6",
     "@nestjs/schedule": "^6.1.1",
     "@stellar-pay/payments-engine": "workspace:*",
+    "@stellar-pay/database": "workspace:*",
     "cron": "^4.4.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",

@@ -85,6 +85,18 @@ model Merchant {
   treasuryWallets TreasuryWallet[]
   payouts        Payout[]
   webhookEvents  WebhookEvent[]
+  apiKeys        ApiKey[]
+}
+
+model ApiKey {
+  id         String   @id @default(cuid())
+  merchantId String
+  keyHash    String   @unique @map("key_hash")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@index([merchantId])
 }
 
 model MerchantUser {

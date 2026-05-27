@@ -10,6 +10,7 @@ StellarPay is a payment processing backend built with NestJS that integrates wit
 - [API Endpoints](#api-endpoints)
   - [Authentication](#authentication)
   - [Health Check](#health-check)
+  - [API Keys](#api-keys)
   - [Treasury](#treasury)
   - [Payments](#payments)
 - [Authentication Flows](#authentication-flows)
@@ -134,6 +135,28 @@ Check the health status of all API dependencies.
   "info": { ... },
   "details": { ... },
   "error": "Service Unavailable"
+}
+```
+
+---
+
+### API Keys
+
+#### POST `/apikeys`
+
+Generate a new merchant API key for server-to-server integrations. The plaintext key is returned only in this response; only its SHA-256 hash is stored.
+
+**Authentication:** Bearer JWT Token
+
+**Headers:**
+```
+Authorization: Bearer <JWT_TOKEN>
+```
+
+**Response (201):**
+```json
+{
+  "key": "sp_live_<64_hex_characters>"
 }
 ```
 
