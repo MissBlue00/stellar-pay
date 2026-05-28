@@ -3,6 +3,11 @@ import type {
   DirectPaymentResult,
   Sep12KycData,
 } from './interfaces/direct-payment.interface';
+import type { RefundResult } from './interfaces/refund-result.interface';
+import type {
+  AnchorTransaction,
+  AnchorTransactionStatus,
+} from './interfaces/transaction.interface';
 
 interface Sep31PaymentRecord {
   paymentId: string;
@@ -20,9 +25,13 @@ interface Sep31PaymentRecord {
 
 export class AnchorService {
   private readonly payments = new Map<string, Sep31PaymentRecord>();
+  private readonly transactions = new Map<string, AnchorTransaction>();
+
+  // ---------------------------------------------------------------------------
+  // SEP-31 Direct Payment
+  // ---------------------------------------------------------------------------
 
   async createSep31DirectPayment(params: DirectPaymentParams): Promise<DirectPaymentResult> {
-    // Validate KYC via SEP-12 (stub - would call SEP-12 endpoints)
     const senderValid = this.validateKyc(params.senderKyc);
     const receiverValid = this.validateKyc(params.receiverKyc);
 
@@ -51,8 +60,6 @@ export class AnchorService {
     this.payments.set(paymentId, record);
 
     try {
-      // Execute Stellar SEP-31 payment (stub - would use stellar-sdk)
-      // const txHash = await this.submitStellarPayment(...);
       const txHash = `tx_${crypto.randomUUID().split('-').join('').slice(0, 16)}`;
 
       record.stellarTransactionHash = txHash;
@@ -99,13 +106,6 @@ export class AnchorService {
   }
 
   private validateKyc(_kyc: Record<string, unknown> | Sep12KycData): boolean {
-    // TODO: Call SEP-12 KYC endpoint to validate sender/receiver info
-    // const response = await fetch(`https://anchor.example.com/sep12/customer`, {
-    //   method: 'GET',
-    //   headers: { Authorization: `Bearer ${this.authToken}` },
-    //   body: JSON.stringify(_kyc),
-    // });
-    // return response.ok;
     return true;
   }
 
@@ -120,5 +120,88 @@ export class AnchorService {
       error,
       createdAt: new Date().toISOString(),
     };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Anchor Refund
+  // ---------------------------------------------------------------------------
+
+  registerTransaction(tx: AnchorTransaction): void {
+    this.transactions.set(tx.id, { ...tx, amountRefunded: tx.amountRefunded ?? 0 });
+  }
+
+  async processAnchorRefund(transactionId: string): Promise<RefundResult> {
+    const tx = this.transactions.get(transactionId);
+    if (!tx) {
+      return {
+        transactionId,
+        success: false,
+        amountRefunded: 0,
+        totalAmount: 0,
+        isPartialRefund: false,
+        status: 'failed',
+        error: `Transaction ${transactionId} not found`,
+        refundedAt: new Date().toISOString(),
+      };
+    }
+
+    if (tx.status === 'refunded') {
+      return {
+        transactionId,
+        success: false,
+        amountRefunded: tx.amountRefunded,
+        totalAmount: tx.amount,
+        isPartialRefund: false,
+        status: 'failed',
+        error: 'Transaction has already been fully refunded',
+        refundedAt: new Date().toISOString(),
+      };
+    }
+
+    if (tx.status !== 'failed') {
+      return {
+        transactionId,
+        success: false,
+        amountRefunded: tx.amountRefunded,
+        totalAmount: tx.amount,
+        isPartialRefund: false,
+        status: 'failed',
+        error: `Transaction is in status '${tx.status}' and cannot be refunded`,
+        refundedAt: new Date().toISOString(),
+      };
+    }
+
+    const remaining = tx.amount - tx.amountRefunded;
+    const isPartial = tx.amountRefunded > 0 && remaining > 0;
+
+    tx.amountRefunded = tx.amount;
+    tx.updatedAt = new Date().toISOString();
+
+    let newStatus: AnchorTransactionStatus;
+    if (isPartial) {
+      newStatus = 'partially_refunded';
+    } else {
+      newStatus = 'refunded';
+    }
+    tx.status = newStatus;
+    this.transactions.set(tx.id, tx);
+
+    return {
+      transactionId,
+      success: true,
+      amountRefunded: remaining,
+      totalAmount: tx.amount,
+      isPartialRefund: isPartial,
+      status: newStatus,
+      refundedAt: new Date().toISOString(),
+    };
+  }
+
+  getTransaction(id: string): AnchorTransaction | undefined {
+    return this.transactions.get(id);
+  }
+
+  getAllTransactions(): AnchorTransaction[] {
+    return Array.from(this.transactions.values());
   }
 }

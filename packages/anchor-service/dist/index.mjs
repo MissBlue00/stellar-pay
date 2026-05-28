@@ -1,6 +1,10 @@
 // src/anchor.service.ts
 var AnchorService = class {
   payments = /* @__PURE__ */ new Map();
+  transactions = /* @__PURE__ */ new Map();
+  // ---------------------------------------------------------------------------
+  // SEP-31 Direct Payment
+  // ---------------------------------------------------------------------------
   async createSep31DirectPayment(params) {
     const senderValid = this.validateKyc(params.senderKyc);
     const receiverValid = this.validateKyc(params.receiverKyc);
@@ -77,6 +81,78 @@ var AnchorService = class {
       error,
       createdAt: (/* @__PURE__ */ new Date()).toISOString()
     };
+  }
+  // ---------------------------------------------------------------------------
+  // Anchor Refund
+  // ---------------------------------------------------------------------------
+  registerTransaction(tx) {
+    this.transactions.set(tx.id, { ...tx, amountRefunded: tx.amountRefunded ?? 0 });
+  }
+  async processAnchorRefund(transactionId) {
+    const tx = this.transactions.get(transactionId);
+    if (!tx) {
+      return {
+        transactionId,
+        success: false,
+        amountRefunded: 0,
+        totalAmount: 0,
+        isPartialRefund: false,
+        status: "failed",
+        error: `Transaction ${transactionId} not found`,
+        refundedAt: (/* @__PURE__ */ new Date()).toISOString()
+      };
+    }
+    if (tx.status === "refunded") {
+      return {
+        transactionId,
+        success: false,
+        amountRefunded: tx.amountRefunded,
+        totalAmount: tx.amount,
+        isPartialRefund: false,
+        status: "failed",
+        error: "Transaction has already been fully refunded",
+        refundedAt: (/* @__PURE__ */ new Date()).toISOString()
+      };
+    }
+    if (tx.status !== "failed") {
+      return {
+        transactionId,
+        success: false,
+        amountRefunded: tx.amountRefunded,
+        totalAmount: tx.amount,
+        isPartialRefund: false,
+        status: "failed",
+        error: `Transaction is in status '${tx.status}' and cannot be refunded`,
+        refundedAt: (/* @__PURE__ */ new Date()).toISOString()
+      };
+    }
+    const remaining = tx.amount - tx.amountRefunded;
+    const isPartial = tx.amountRefunded > 0 && remaining > 0;
+    tx.amountRefunded = tx.amount;
+    tx.updatedAt = (/* @__PURE__ */ new Date()).toISOString();
+    let newStatus;
+    if (isPartial) {
+      newStatus = "partially_refunded";
+    } else {
+      newStatus = "refunded";
+    }
+    tx.status = newStatus;
+    this.transactions.set(tx.id, tx);
+    return {
+      transactionId,
+      success: true,
+      amountRefunded: remaining,
+      totalAmount: tx.amount,
+      isPartialRefund: isPartial,
+      status: newStatus,
+      refundedAt: (/* @__PURE__ */ new Date()).toISOString()
+    };
+  }
+  getTransaction(id) {
+    return this.transactions.get(id);
+  }
+  getAllTransactions() {
+    return Array.from(this.transactions.values());
   }
 };
 export {
