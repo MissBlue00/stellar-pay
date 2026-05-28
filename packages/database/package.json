@@ -5,6 +5,7 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "scripts": {
+    "build": "prisma generate --schema ./migrations/schema.prisma",
     "db:generate": "prisma generate --schema ./migrations/schema.prisma",
     "db:migrate:dev": "prisma migrate dev --schema ./migrations/schema.prisma",
     "db:migrate:status": "prisma migrate status --schema ./migrations/schema.prisma",
