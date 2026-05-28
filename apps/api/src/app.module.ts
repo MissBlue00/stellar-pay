@@ -12,6 +12,7 @@ import { ThrottlerRedisGuard } from './rate-limiter/guards/throttler-redis.guard
 import { TransactionsModule } from './transactions/transactions.module';
 import { WorkerModule } from './modules/worker/worker.module';
 import { PaymentsModule } from './payments/payments.module.js';
+import { PrismaModule } from './prisma/prisma.module.js';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { PaymentsModule } from './payments/payments.module.js';
     TransactionsModule,
     WorkerModule,
     PaymentsModule,
+    PrismaModule,
     ThrottlerModule.forRoot({
       throttlers: [
         { name: 'short', ttl: 60000, limit: 100 },
