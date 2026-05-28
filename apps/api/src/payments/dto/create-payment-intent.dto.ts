@@ -1,4 +1,4 @@
-import { IsEnum, IsNumber, IsObject, IsOptional, Min } from 'class-validator';
+import { IsEnum, IsNumber, IsObject, IsOptional, IsString, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { Currency } from '../enums/currency.enum.js';
 
@@ -12,6 +12,10 @@ export class CreatePaymentIntentDto {
     message: `currency must be one of: ${Object.values(Currency).join(', ')}`,
   })
   currency!: Currency;
+
+  @IsOptional()
+  @IsString()
+  reference?: string;
 
   @IsOptional()
   @IsObject()

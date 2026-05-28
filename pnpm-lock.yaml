@@ -107,6 +107,9 @@ importers:
       '@nestjs/throttler':
         specifier: ^6.5.0
         version: 6.5.0(@nestjs/common@11.1.14(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.14)(reflect-metadata@0.2.2)
+      '@prisma/client':
+        specifier: ^6.6.0
+        version: 6.19.2(prisma@6.19.2(typescript@5.9.3))(typescript@5.9.3)
       '@stellar-pay/database':
         specifier: workspace:*
         version: link:../../packages/database
@@ -198,6 +201,9 @@ importers:
       prettier:
         specifier: ^3.4.2
         version: 3.8.1
+      prisma:
+        specifier: ^6.6.0
+        version: 6.19.2(typescript@5.9.3)
       source-map-support:
         specifier: ^0.5.21
         version: 0.5.21
