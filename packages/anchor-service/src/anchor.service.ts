@@ -3,9 +3,26 @@ import type {
   AnchorTransaction,
   AnchorTransactionStatus,
 } from './interfaces/transaction.interface';
+import type {
+  CustomerData,
+  CustomerPutResponse,
+  CustomerStatus,
+  IdentityDocument,
+} from './interfaces/customer.interface';
+
+interface CustomerRecord {
+  customerId: string;
+  data: CustomerData;
+  status: CustomerStatus;
+  message?: string;
+  fieldsRequired?: string[];
+  createdAt: string;
+  updatedAt: string;
+}
 
 export class AnchorService {
   private readonly transactions = new Map<string, AnchorTransaction>();
+  private readonly customers = new Map<string, CustomerRecord>();
 
   registerTransaction(tx: AnchorTransaction): void {
     this.transactions.set(tx.id, { ...tx, amountRefunded: tx.amountRefunded ?? 0 });
@@ -84,5 +101,113 @@ export class AnchorService {
 
   getAllTransactions(): AnchorTransaction[] {
     return Array.from(this.transactions.values());
+  }
+
+  // ---------------------------------------------------------------------------
+  // SEP-12 Customer Info
+  // ---------------------------------------------------------------------------
+
+  async submitCustomerInfo(customerData: CustomerData): Promise<CustomerPutResponse> {
+    const existingId = customerData.id ?? '';
+    const isUpdate = !!customerData.id && this.customers.has(existingId);
+    const customerId = isUpdate
+      ? existingId
+      : `cust_${crypto.randomUUID().split('-').join('').slice(0, 16)}`;
+
+    const missingFields = this.validateRequiredFields(customerData, isUpdate);
+    if (missingFields.length > 0) {
+      return {
+        success: false,
+        customerId,
+        status: 'NEEDS_INFO',
+        message: 'Some required fields are missing',
+        fieldsRequired: missingFields,
+      };
+    }
+
+    if (customerData.identityDocument) {
+      const uploaded = await this.handleDocumentUpload(customerData.identityDocument);
+      if (!uploaded) {
+        return {
+          success: false,
+          customerId,
+          status: 'NEEDS_INFO',
+          message: 'Identity document upload failed',
+          fieldsRequired: ['identityDocument'],
+        };
+      }
+    }
+
+    let status: CustomerStatus;
+    if (isUpdate) {
+      const existing = this.customers.get(existingId);
+      if (!existing) {
+        return {
+          success: false,
+          customerId,
+          status: 'NEEDS_INFO',
+          message: 'Customer record not found',
+        };
+      }
+      existing.data = { ...existing.data, ...customerData };
+      existing.status = 'APPROVED';
+      existing.updatedAt = new Date().toISOString();
+      this.customers.set(existingId, existing);
+      status = existing.status;
+    } else {
+      const record: CustomerRecord = {
+        customerId,
+        data: customerData,
+        status: 'APPROVED',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      this.customers.set(customerId, record);
+      status = record.status;
+    }
+
+    return {
+      success: true,
+      customerId,
+      status,
+      message: isUpdate
+        ? 'Customer info updated successfully'
+        : 'Customer info submitted successfully',
+    };
+  }
+
+  getCustomer(customerId: string): CustomerRecord | undefined {
+    return this.customers.get(customerId);
+  }
+
+  getAllCustomers(): CustomerRecord[] {
+    return Array.from(this.customers.values());
+  }
+
+  private validateRequiredFields(data: CustomerData, isUpdate: boolean): string[] {
+    const missing: string[] = [];
+
+    if (isUpdate) return missing;
+
+    if (!data.firstName) missing.push('firstName');
+    if (!data.lastName) missing.push('lastName');
+    if (!data.email) missing.push('email');
+    if (!data.countryCode) missing.push('countryCode');
+
+    return missing;
+  }
+
+  private async handleDocumentUpload(
+    _document: Record<string, unknown> | IdentityDocument,
+  ): Promise<boolean> {
+    // TODO: Implement actual file upload to anchor's SEP-12 endpoint
+    // const formData = new FormData();
+    // formData.append('file', document.file);
+    // const response = await fetch('https://anchor.example.com/sep12/customer', {
+    //   method: 'PUT',
+    //   body: formData,
+    // });
+    // return response.ok;
+    return true;
   }
 }

@@ -5,3 +5,10 @@ export type {
   AnchorTransactionType,
   AnchorTransactionStatus,
 } from './interfaces/transaction.interface';
+export type {
+  CustomerData,
+  CustomerPutResponse,
+  CustomerStatus,
+  IdentityDocument,
+  FileContent,
+} from './interfaces/customer.interface';
