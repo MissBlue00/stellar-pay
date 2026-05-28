@@ -14,6 +14,7 @@ import type {
   CustomerStatus,
   IdentityDocument,
 } from './interfaces/customer.interface';
+import type { FeeQuote, TransactionType } from './interfaces/fee.interface';
 
 interface CustomerRecord {
   customerId: string;
@@ -301,6 +302,69 @@ export class AnchorService {
 
   getAllCustomers(): CustomerRecord[] {
     return Array.from(this.customers.values());
+  }
+
+  // ---------------------------------------------------------------------------
+  // Fee Calculation
+  // ---------------------------------------------------------------------------
+
+  private readonly feeSchedule: Record<string, { flat: string; percentage: string }> = {
+    USDC: { flat: '1.00', percentage: '0' },
+    USDT: { flat: '1.00', percentage: '0' },
+    BTC: { flat: '0.0001', percentage: '0.5' },
+    ETH: { flat: '0.001', percentage: '0.3' },
+    XLM: { flat: '0.01', percentage: '0' },
+  };
+
+  async calculateAnchorFee(
+    amount: string,
+    asset: string,
+    type: TransactionType,
+  ): Promise<FeeQuote> {
+    const schedule = this.feeSchedule[asset] ?? { flat: '0', percentage: '1' };
+    const parsedAmount = parseFloat(amount);
+
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      throw new Error(`Invalid amount: ${amount}`);
+    }
+
+    const breakdown: FeeQuote['feeBreakdown'] = [];
+
+    let totalFee = 0;
+
+    if (schedule.flat !== '0') {
+      const flatFee = parseFloat(schedule.flat);
+      totalFee += flatFee;
+      breakdown.push({
+        type: 'flat',
+        description: `Flat fee for ${asset}`,
+        amount: schedule.flat,
+      });
+    }
+
+    if (schedule.percentage !== '0') {
+      const percentageFee = parsedAmount * (parseFloat(schedule.percentage) / 100);
+      totalFee += percentageFee;
+      breakdown.push({
+        type: 'percentage',
+        description: `${schedule.percentage}% fee on ${asset}`,
+        amount: percentageFee.toFixed(7),
+      });
+    }
+
+    const effectiveRate = parsedAmount > 0 ? ((totalFee / parsedAmount) * 100).toFixed(4) : '0';
+
+    return {
+      totalFee: totalFee.toFixed(7),
+      asset,
+      type,
+      amount,
+      feeBreakdown: breakdown,
+      effectiveRate: `${effectiveRate}%`,
+      quoteId: `fee_${crypto.randomUUID().split('-').join('').slice(0, 16)}`,
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+      createdAt: new Date().toISOString(),
+    };
   }
 
   private validateRequiredFields(data: CustomerData, isUpdate: boolean): string[] {

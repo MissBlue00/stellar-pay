@@ -17,3 +17,4 @@ export type {
   IdentityDocument,
   FileContent,
 } from './interfaces/customer.interface';
+export type { FeeQuote, FeeBreakdown, TransactionType } from './interfaces/fee.interface';
