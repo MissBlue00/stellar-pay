@@ -14,6 +14,7 @@ import type {
   CustomerStatus,
   IdentityDocument,
 } from './interfaces/customer.interface';
+import type { KycStatusResponse } from './interfaces/kyc.interface';
 import type { FeeQuote, TransactionType } from './interfaces/fee.interface';
 
 interface CustomerRecord {
@@ -44,6 +45,7 @@ export class AnchorService {
   private readonly payments = new Map<string, Sep31PaymentRecord>();
   private readonly transactions = new Map<string, AnchorTransaction>();
   private readonly customers = new Map<string, CustomerRecord>();
+  private readonly accountLinks = new Map<string, string>();
 
   // ---------------------------------------------------------------------------
   // SEP-31 Direct Payment
@@ -302,6 +304,65 @@ export class AnchorService {
 
   getAllCustomers(): CustomerRecord[] {
     return Array.from(this.customers.values());
+  }
+
+  // ---------------------------------------------------------------------------
+  // SEP-12 KYC Status
+  // ---------------------------------------------------------------------------
+
+  linkAccount(accountId: string, customerId: string): void {
+    this.accountLinks.set(accountId, customerId);
+  }
+
+  async checkKycStatus(accountId: string): Promise<KycStatusResponse> {
+    const customerId = this.accountLinks.get(accountId);
+
+    if (!customerId) {
+      return {
+        accountId,
+        status: 'pending',
+        message: 'No KYC data found for this account. Please submit customer info first.',
+        checkedAt: new Date().toISOString(),
+      };
+    }
+
+    const customer = this.customers.get(customerId);
+
+    if (!customer) {
+      this.accountLinks.delete(accountId);
+      return {
+        accountId,
+        status: 'pending',
+        message: 'Customer record not found. Please resubmit customer info.',
+        checkedAt: new Date().toISOString(),
+      };
+    }
+
+    let status: KycStatusResponse['status'];
+    switch (customer.status) {
+      case 'APPROVED':
+        status = 'approved';
+        break;
+      case 'REJECTED':
+        status = 'rejected';
+        break;
+      default:
+        status = 'pending';
+        break;
+    }
+
+    return {
+      accountId,
+      status,
+      customerId: customer.customerId,
+      message:
+        status === 'approved'
+          ? 'KYC approved'
+          : status === 'rejected'
+            ? 'KYC rejected'
+            : 'KYC is still being processed',
+      checkedAt: new Date().toISOString(),
+    };
   }
 
   // ---------------------------------------------------------------------------

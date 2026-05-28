@@ -17,4 +17,5 @@ export type {
   IdentityDocument,
   FileContent,
 } from './interfaces/customer.interface';
+export type { KycStatusResponse } from './interfaces/kyc.interface';
 export type { FeeQuote, FeeBreakdown, TransactionType } from './interfaces/fee.interface';
