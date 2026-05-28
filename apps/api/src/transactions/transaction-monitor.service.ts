@@ -11,8 +11,7 @@ export class TransactionMonitorService implements OnModuleInit, OnModuleDestroy 
   private readonly STELLAR_HORIZON_URL =
     process.env.STELLAR_HORIZON_URL ?? 'https://horizon-testnet.stellar.org';
   private readonly BTC_API_URL = process.env.BTC_API_URL ?? 'https://blockstream.info/api';
-  private readonly ETH_RPC_URL =
-    process.env.ETH_RPC_URL ?? 'https://cloudflare-eth.com';
+  private readonly ETH_RPC_URL = process.env.ETH_RPC_URL ?? 'https://cloudflare-eth.com';
 
   constructor(private readonly transactionsService: TransactionsService) {}
 
@@ -65,9 +64,7 @@ export class TransactionMonitorService implements OnModuleInit, OnModuleDestroy 
         );
       }
     } catch (err) {
-      this.logger.warn(
-        `[${network}] Failed to check ${hash}: ${(err as Error).message}`,
-      );
+      this.logger.warn(`[${network}] Failed to check ${hash}: ${(err as Error).message}`);
     }
   }
 

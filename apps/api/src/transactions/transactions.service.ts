@@ -34,8 +34,7 @@ export class TransactionsService {
 
   findPending(): Transaction[] {
     return Array.from(this.store.values()).filter(
-      (tx) =>
-        tx.status !== TransactionStatus.CONFIRMED && tx.status !== TransactionStatus.FAILED,
+      (tx) => tx.status !== TransactionStatus.CONFIRMED && tx.status !== TransactionStatus.FAILED,
     );
   }
 
