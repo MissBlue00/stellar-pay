@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { createHmac } from 'crypto';
 import { WebhookService } from './webhook.service';
 import { WebhookRepository } from './webhook.repository';
 import { WebhookEventType } from './interfaces/webhook-event.interface';
@@ -48,8 +49,14 @@ describe('WebhookService', () => {
     });
 
     it('lists webhooks for a merchant', () => {
-      service.createWebhook('merchant-1', { url: 'https://a.com', events: [WebhookEventType.PAYMENT_CREATED] });
-      service.createWebhook('merchant-2', { url: 'https://b.com', events: [WebhookEventType.PAYMENT_FAILED] });
+      service.createWebhook('merchant-1', {
+        url: 'https://a.com',
+        events: [WebhookEventType.PAYMENT_CREATED],
+      });
+      service.createWebhook('merchant-2', {
+        url: 'https://b.com',
+        events: [WebhookEventType.PAYMENT_FAILED],
+      });
 
       expect(service.listWebhooks('merchant-1')).toHaveLength(1);
     });
@@ -100,7 +107,11 @@ describe('WebhookService', () => {
       const [url, options] = (global.fetch as jest.Mock).mock.calls[0] as [string, RequestInit];
       expect(url).toBe(config.url);
 
-      const body = JSON.parse(options.body as string) as { event: string; data: unknown; timestamp: string };
+      const body = JSON.parse(options.body as string) as {
+        event: string;
+        data: unknown;
+        timestamp: string;
+      };
       expect(body.event).toBe(WebhookEventType.PAYMENT_CREATED);
       expect(body.data).toBeDefined();
       expect(body.timestamp).toBeDefined();
@@ -111,11 +122,20 @@ describe('WebhookService', () => {
       jest.spyOn(repo, 'findActiveConfigsByEvent').mockReturnValue([config]);
       jest.spyOn(repo, 'saveDeliveryAttempt').mockImplementation(() => {});
 
-      global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, statusText: 'OK', text: async () => '' } as Response);
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: async () => '',
+      } as Response);
 
-      await service.dispatchEvent('merchant-1', WebhookEventType.PAYMENT_DETECTED, { payment_id: 'pay-1' });
+      await service.dispatchEvent('merchant-1', WebhookEventType.PAYMENT_DETECTED, {
+        payment_id: 'pay-1',
+      });
 
-      const body = JSON.parse(((global.fetch as jest.Mock).mock.calls[0] as [string, RequestInit])[1].body as string) as { event: string };
+      const body = JSON.parse(
+        ((global.fetch as jest.Mock).mock.calls[0] as [string, RequestInit])[1].body as string,
+      ) as { event: string };
       expect(body.event).toBe('payment.detected');
     });
 
@@ -124,11 +144,20 @@ describe('WebhookService', () => {
       jest.spyOn(repo, 'findActiveConfigsByEvent').mockReturnValue([config]);
       jest.spyOn(repo, 'saveDeliveryAttempt').mockImplementation(() => {});
 
-      global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, statusText: 'OK', text: async () => '' } as Response);
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: async () => '',
+      } as Response);
 
-      await service.dispatchEvent('merchant-1', WebhookEventType.PAYMENT_CONFIRMED, { payment_id: 'pay-1' });
+      await service.dispatchEvent('merchant-1', WebhookEventType.PAYMENT_CONFIRMED, {
+        payment_id: 'pay-1',
+      });
 
-      const body = JSON.parse(((global.fetch as jest.Mock).mock.calls[0] as [string, RequestInit])[1].body as string) as { event: string };
+      const body = JSON.parse(
+        ((global.fetch as jest.Mock).mock.calls[0] as [string, RequestInit])[1].body as string,
+      ) as { event: string };
       expect(body.event).toBe('payment.confirmed');
     });
 
@@ -137,11 +166,20 @@ describe('WebhookService', () => {
       jest.spyOn(repo, 'findActiveConfigsByEvent').mockReturnValue([config]);
       jest.spyOn(repo, 'saveDeliveryAttempt').mockImplementation(() => {});
 
-      global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, statusText: 'OK', text: async () => '' } as Response);
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: async () => '',
+      } as Response);
 
-      await service.dispatchEvent('merchant-1', WebhookEventType.PAYMENT_FAILED, { payment_id: 'pay-1' });
+      await service.dispatchEvent('merchant-1', WebhookEventType.PAYMENT_FAILED, {
+        payment_id: 'pay-1',
+      });
 
-      const body = JSON.parse(((global.fetch as jest.Mock).mock.calls[0] as [string, RequestInit])[1].body as string) as { event: string };
+      const body = JSON.parse(
+        ((global.fetch as jest.Mock).mock.calls[0] as [string, RequestInit])[1].body as string,
+      ) as { event: string };
       expect(body.event).toBe('payment.failed');
     });
 
@@ -159,11 +197,19 @@ describe('WebhookService', () => {
       jest.spyOn(repo, 'findActiveConfigsByEvent').mockReturnValue([config]);
       jest.spyOn(repo, 'saveDeliveryAttempt').mockImplementation(() => {});
 
-      global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, statusText: 'OK', text: async () => '' } as Response);
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: async () => '',
+      } as Response);
 
-      await service.dispatchEvent('merchant-1', WebhookEventType.PAYMENT_CREATED, { payment_id: 'pay-1' });
+      await service.dispatchEvent('merchant-1', WebhookEventType.PAYMENT_CREATED, {
+        payment_id: 'pay-1',
+      });
 
-      const headers = ((global.fetch as jest.Mock).mock.calls[0] as [string, RequestInit])[1].headers as Record<string, string>;
+      const headers = ((global.fetch as jest.Mock).mock.calls[0] as [string, RequestInit])[1]
+        .headers as Record<string, string>;
       expect(headers['X-Webhook-Signature']).toBeDefined();
       expect(headers['X-Webhook-Event']).toBe(WebhookEventType.PAYMENT_CREATED);
     });
@@ -173,7 +219,12 @@ describe('WebhookService', () => {
       jest.spyOn(repo, 'findActiveConfigsByEvent').mockReturnValue([config]);
       const saveSpy = jest.spyOn(repo, 'saveDeliveryAttempt').mockImplementation(() => {});
 
-      global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, statusText: 'OK', text: async () => '' } as Response);
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: async () => '',
+      } as Response);
 
       await service.dispatchEvent('merchant-1', WebhookEventType.PAYMENT_CREATED, {});
 
@@ -185,7 +236,12 @@ describe('WebhookService', () => {
       jest.spyOn(repo, 'findActiveConfigsByEvent').mockReturnValue([config]);
       const saveSpy = jest.spyOn(repo, 'saveDeliveryAttempt').mockImplementation(() => {});
 
-      global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 500, statusText: 'Internal Server Error', text: async () => '' } as Response);
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+        text: async () => '',
+      } as Response);
 
       await service.dispatchEvent('merchant-1', WebhookEventType.PAYMENT_CREATED, {});
 
@@ -195,9 +251,12 @@ describe('WebhookService', () => {
 
   describe('verifySignature', () => {
     it('returns true for a valid signature', () => {
-      const payload = JSON.stringify({ event: 'payment.created', data: {}, timestamp: '2024-01-01T00:00:00.000Z' });
+      const payload = JSON.stringify({
+        event: 'payment.created',
+        data: {},
+        timestamp: '2024-01-01T00:00:00.000Z',
+      });
       const secret = 'my-secret';
-      const { createHmac } = require('crypto') as typeof import('crypto');
       const sig = createHmac('sha256', secret).update(payload).digest('hex');
 
       expect(service.verifySignature(payload, sig, secret)).toBe(true);

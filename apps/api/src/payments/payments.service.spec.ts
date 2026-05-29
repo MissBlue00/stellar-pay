@@ -3,6 +3,7 @@ import { NotFoundException } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 import { WebhookService } from '../webhooks/webhook.service';
 import { WebhookEventType } from '../webhooks/interfaces/webhook-event.interface';
+import { Currency } from './enums/currency.enum';
 
 const mockWebhookService = (): jest.Mocked<WebhookService> =>
   ({
@@ -15,10 +16,7 @@ describe('PaymentsService – webhook event dispatch', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        PaymentsService,
-        { provide: WebhookService, useFactory: mockWebhookService },
-      ],
+      providers: [PaymentsService, { provide: WebhookService, useFactory: mockWebhookService }],
     }).compile();
 
     service = module.get(PaymentsService);
@@ -32,7 +30,7 @@ describe('PaymentsService – webhook event dispatch', () => {
   describe('createPaymentIntent', () => {
     it('returns a payment with status "pending"', () => {
       const payment = service.createPaymentIntent(
-        { amount: 50, currency: 'USDC' as any },
+        { amount: 50, currency: Currency.USDC },
         'merchant-1',
       );
 
@@ -43,7 +41,7 @@ describe('PaymentsService – webhook event dispatch', () => {
 
     it('dispatches payment.created event with standardised payload', () => {
       const payment = service.createPaymentIntent(
-        { amount: 100, currency: 'USDC' as any, metadata: { ref: 'ord-9' } },
+        { amount: 100, currency: Currency.USDC, metadata: { ref: 'ord-9' } },
         'merchant-1',
       );
 
@@ -61,9 +59,9 @@ describe('PaymentsService – webhook event dispatch', () => {
     });
 
     it('payload contains created_at timestamp', () => {
-      service.createPaymentIntent({ amount: 1, currency: 'USDC' as any }, 'merchant-1');
+      service.createPaymentIntent({ amount: 1, currency: Currency.USDC }, 'merchant-1');
 
-      const [, , data] = (webhookSvc.dispatchEvent as jest.Mock).mock.calls[0] as [
+      const [, , data] = webhookSvc.dispatchEvent.mock.calls[0] as [
         string,
         WebhookEventType,
         Record<string, unknown>,
@@ -77,7 +75,7 @@ describe('PaymentsService – webhook event dispatch', () => {
   describe('markDetected', () => {
     it('updates status to "detected" and dispatches payment.detected', () => {
       const payment = service.createPaymentIntent(
-        { amount: 10, currency: 'USDC' as any },
+        { amount: 10, currency: Currency.USDC },
         'merchant-2',
       );
       jest.clearAllMocks();
@@ -102,7 +100,7 @@ describe('PaymentsService – webhook event dispatch', () => {
   describe('markConfirmed', () => {
     it('updates status to "confirmed" and dispatches payment.confirmed', () => {
       const payment = service.createPaymentIntent(
-        { amount: 25, currency: 'XLM' as any },
+        { amount: 25, currency: Currency.XLM },
         'merchant-3',
       );
       jest.clearAllMocks();
@@ -119,13 +117,13 @@ describe('PaymentsService – webhook event dispatch', () => {
 
     it('payload contains updated_at timestamp', () => {
       const payment = service.createPaymentIntent(
-        { amount: 5, currency: 'USDC' as any },
+        { amount: 5, currency: Currency.USDC },
         'merchant-1',
       );
       jest.clearAllMocks();
       service.markConfirmed(payment.id);
 
-      const [, , data] = (webhookSvc.dispatchEvent as jest.Mock).mock.calls[0] as [
+      const [, , data] = webhookSvc.dispatchEvent.mock.calls[0] as [
         string,
         WebhookEventType,
         Record<string, unknown>,
@@ -143,7 +141,7 @@ describe('PaymentsService – webhook event dispatch', () => {
   describe('markFailed', () => {
     it('updates status to "failed" and dispatches payment.failed', () => {
       const payment = service.createPaymentIntent(
-        { amount: 75, currency: 'USDC' as any },
+        { amount: 75, currency: Currency.USDC },
         'merchant-4',
       );
       jest.clearAllMocks();
@@ -168,7 +166,7 @@ describe('PaymentsService – webhook event dispatch', () => {
   describe('dispatch payload shape', () => {
     it('dispatches exactly once per lifecycle transition', () => {
       const payment = service.createPaymentIntent(
-        { amount: 10, currency: 'USDC' as any },
+        { amount: 10, currency: Currency.USDC },
         'merchant-1',
       );
       jest.clearAllMocks();
@@ -180,11 +178,11 @@ describe('PaymentsService – webhook event dispatch', () => {
     it('merchant id is forwarded correctly in every dispatch', () => {
       const merchantId = 'merchant-xyz';
       const payment = service.createPaymentIntent(
-        { amount: 10, currency: 'USDC' as any },
+        { amount: 10, currency: Currency.USDC },
         merchantId,
       );
 
-      const calls = (webhookSvc.dispatchEvent as jest.Mock).mock.calls as [string, ...unknown[]][];
+      const calls = webhookSvc.dispatchEvent.mock.calls as [string, ...unknown[]][];
       expect(calls[0][0]).toBe(merchantId);
 
       jest.clearAllMocks();
@@ -192,7 +190,7 @@ describe('PaymentsService – webhook event dispatch', () => {
       service.markConfirmed(payment.id);
       service.markFailed(payment.id);
 
-      const allCalls = (webhookSvc.dispatchEvent as jest.Mock).mock.calls as [string, ...unknown[]][];
+      const allCalls = webhookSvc.dispatchEvent.mock.calls as [string, ...unknown[]][];
       allCalls.forEach(([mid]) => expect(mid).toBe(merchantId));
     });
   });

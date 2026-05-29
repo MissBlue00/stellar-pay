@@ -3,13 +3,15 @@ import { NotFoundException, ForbiddenException } from '@nestjs/common';
 import { WebhookController } from './webhook.controller';
 import { WebhookService } from './webhook.service';
 import { WebhookEventType } from './interfaces/webhook-event.interface';
-import type { WebhookConfig, CreateWebhookConfigDto } from './interfaces/webhook-config.interface';
+import type { WebhookConfig } from './interfaces/webhook-config.interface';
+import type { CreateWebhookDto } from './dto/create-webhook.dto';
+import type { UpdateWebhookDto } from './dto/update-webhook.dto';
 import type { MerchantUser } from '../auth/interfaces/merchant-user.interface';
 
 const MERCHANT_ID = 'merchant-test-1';
 const OTHER_MERCHANT_ID = 'merchant-other';
 
-const merchant = (): MerchantUser => ({ merchant_id: MERCHANT_ID } as MerchantUser);
+const merchant = (): MerchantUser => ({ merchant_id: MERCHANT_ID }) as MerchantUser;
 
 const makeConfig = (overrides: Partial<WebhookConfig> = {}): WebhookConfig => ({
   id: 'wh-abc',
@@ -57,12 +59,12 @@ describe('WebhookController', () => {
       const config = makeConfig();
       svc.createWebhook.mockReturnValue(config);
 
-      const dto: CreateWebhookConfigDto = {
+      const dto: CreateWebhookDto = {
         url: 'https://example.com/hook',
         events: [WebhookEventType.PAYMENT_CREATED],
       };
 
-      const result = controller.create(dto as any, merchant());
+      const result = controller.create(dto, merchant());
       expect(svc.createWebhook).toHaveBeenCalledWith(MERCHANT_ID, dto);
       expect(result).toEqual(config);
     });
@@ -110,19 +112,30 @@ describe('WebhookController', () => {
       svc.getWebhook.mockReturnValue(makeConfig());
       svc.updateWebhook.mockReturnValue(updated);
 
-      const result = controller.update('wh-abc', { url: 'https://new.com', enabled: false } as any, merchant());
-      expect(svc.updateWebhook).toHaveBeenCalledWith('wh-abc', { url: 'https://new.com', enabled: false });
+      const result = controller.update(
+        'wh-abc',
+        { url: 'https://new.com', enabled: false } as UpdateWebhookDto,
+        merchant(),
+      );
+      expect(svc.updateWebhook).toHaveBeenCalledWith('wh-abc', {
+        url: 'https://new.com',
+        enabled: false,
+      });
       expect(result).toEqual(updated);
     });
 
     it('throws NotFoundException when webhook does not exist', () => {
       svc.getWebhook.mockReturnValue(undefined);
-      expect(() => controller.update('missing', {} as any, merchant())).toThrow(NotFoundException);
+      expect(() => controller.update('missing', {} as UpdateWebhookDto, merchant())).toThrow(
+        NotFoundException,
+      );
     });
 
     it('throws ForbiddenException when webhook belongs to another merchant', () => {
       svc.getWebhook.mockReturnValue(makeConfig({ merchant_id: OTHER_MERCHANT_ID }));
-      expect(() => controller.update('wh-abc', {} as any, merchant())).toThrow(ForbiddenException);
+      expect(() => controller.update('wh-abc', {} as UpdateWebhookDto, merchant())).toThrow(
+        ForbiddenException,
+      );
     });
   });
 

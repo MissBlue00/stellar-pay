@@ -1,7 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { randomBytes } from 'crypto';
-import type { WebhookConfig, CreateWebhookConfigDto, UpdateWebhookConfigDto } from './interfaces/webhook-config.interface';
-import type { WebhookDeliveryAttempt } from './interfaces/webhook-event.interface';
+import type {
+  WebhookConfig,
+  CreateWebhookConfigDto,
+  UpdateWebhookConfigDto,
+} from './interfaces/webhook-config.interface';
+import type {
+  WebhookDeliveryAttempt,
+  WebhookEventType,
+} from './interfaces/webhook-event.interface';
 
 @Injectable()
 export class WebhookRepository {
@@ -52,12 +59,10 @@ export class WebhookRepository {
     return true;
   }
 
-  findActiveConfigsByEvent(merchantId: string, eventType: string): WebhookConfig[] {
+  findActiveConfigsByEvent(merchantId: string, eventType: WebhookEventType): WebhookConfig[] {
     return this.configs.filter(
       (config) =>
-        config.merchant_id === merchantId &&
-        config.enabled &&
-        config.events.includes(eventType as any),
+        config.merchant_id === merchantId && config.enabled && config.events.includes(eventType),
     );
   }
 
