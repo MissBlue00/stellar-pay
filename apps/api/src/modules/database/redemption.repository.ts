@@ -24,6 +24,10 @@ export class RedemptionRepository {
     },
   ];
 
+  async create(redemption: Redemption): Promise<void> {
+    this.redemptions.push(redemption);
+  }
+
   async getPending(limit: number = 50): Promise<Redemption[]> {
     return this.redemptions.filter((r) => r.status === 'PENDING').slice(0, limit);
   }

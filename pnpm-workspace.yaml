@@ -2,6 +2,18 @@ packages:
   - apps/*
   - packages/*
 
+allowBuilds:
+  '@nestjs/core': false
+  '@prisma/client': false
+  '@prisma/engines': false
+  '@scarf/scarf': false
+  esbuild: false
+  msgpackr-extract: false
+  msw: false
+  prisma: false
+  sharp: false
+  unrs-resolver: false
+
 ignoredBuiltDependencies:
   - '@nestjs/core'
   - esbuild

@@ -8,10 +8,10 @@
 import { Module } from '@nestjs/common';
 import { TreasuryController } from './treasury.controller';
 import { TreasuryService } from './treasury.service';
-import { PrismaModule } from '../prisma/prisma.module';
+import { WorkerModule } from '../modules/worker/worker.module';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [WorkerModule],
   controllers: [TreasuryController],
   providers: [TreasuryService],
   // Export so payments-engine and other modules can inject TreasuryService

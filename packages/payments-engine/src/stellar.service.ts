@@ -24,9 +24,18 @@ export class StellarService {
   /**
    * Sends funds from the operational storage to a destination address
    */
-  async sendFunds(destinationAddress: string, amount: string): Promise<string> {
+  async sendFunds(
+    destinationAddress: string,
+    amount: string,
+    assetCode?: string,
+    assetIssuer?: string,
+  ): Promise<string> {
     try {
       const sourceAccount = await this.server.loadAccount(this.sourceKeypair.publicKey());
+      const asset =
+        assetCode && assetIssuer
+          ? new StellarSdk.Asset(assetCode, assetIssuer)
+          : StellarSdk.Asset.native();
 
       const transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
         fee: StellarSdk.BASE_FEE,
@@ -37,7 +46,7 @@ export class StellarService {
         .addOperation(
           StellarSdk.Operation.payment({
             destination: destinationAddress,
-            asset: StellarSdk.Asset.native(),
+            asset,
             amount: amount,
           }),
         )
