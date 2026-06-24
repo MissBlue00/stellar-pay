@@ -10,6 +10,7 @@ import { ApiKeysModule } from './api-keys/api-keys.module.js';
 import { AuditLogModule } from './audit-log/audit-log.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { ThrottlerRedisGuard } from './rate-limiter/guards/throttler-redis.guard';
+import { ThrottlerStorageRedisService } from './rate-limiter/throttler-storage-redis.service';
 import { TransactionsModule } from './transactions/transactions.module';
 import { WorkerModule } from './modules/worker/worker.module';
 import { WebhookModule } from './webhooks/webhook.module';
@@ -31,13 +32,13 @@ import { PaymentsModule } from './payments/payments.module';
         { name: 'short', ttl: 60000, limit: 100 },
         { name: 'long', ttl: 60000, limit: 1000 },
       ],
-      // TODO: Implement Redis storage when Redis service is available
-      // storage: new ThrottlerStorageRedisService(),
+      storage: new ThrottlerStorageRedisService(),
     }),
   ],
   controllers: [AppController],
   providers: [
     AppService,
+    ThrottlerStorageRedisService,
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
