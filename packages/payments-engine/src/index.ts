@@ -8,4 +8,20 @@ export interface PaymentIntentType {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export type {
+  PaymentMemoType,
+  PaymentAssetInput,
+  PaymentMemoInput,
+  SourceAccountInput,
+  BuildTransactionParamsInput,
+  BuiltTransactionParams,
+} from './build-transaction-params';
+
+export {
+  buildTransactionParams,
+  buildTransactionFromParams,
+  encodePaymentMemo,
+} from './build-transaction-params';
+
 export * from './stellar.service';
