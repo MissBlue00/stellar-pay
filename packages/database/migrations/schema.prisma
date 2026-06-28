@@ -31,6 +31,7 @@ model Merchant {
   paymentIntents   PaymentIntent[]
   webhookEndpoints WebhookEndpoint[]
   apiKeys          ApiKey[]
+  auditLogs        AuditLog[]
 
   @@map("merchants")
 }
@@ -85,4 +86,21 @@ model ApiKey {
 
   @@index([merchantId])
   @@map("api_keys")
+}
+
+model AuditLog {
+  id           String   @id @default(uuid()) @db.Uuid
+  merchantId   String   @map("merchant_id") @db.Uuid
+  eventType    String   @map("event_type")
+  metadata     Json
+  ip           String
+  previousHash String?  @map("previous_hash")
+  entryHash    String   @unique @map("entry_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@index([merchantId])
+  @@map("audit_logs")
 }
