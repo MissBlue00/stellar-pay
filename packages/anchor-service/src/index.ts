@@ -1,4 +1,10 @@
 export { AnchorService } from './anchor.service';
+export { authenticateSep10 } from './sep10';
+export type {
+  Sep10Config,
+  Sep10AuthResult,
+  Sep10ChallengeResponse,
+} from './interfaces/sep10.interface';
 export type {
   DirectPaymentParams,
   DirectPaymentResult,
