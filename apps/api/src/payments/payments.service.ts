@@ -98,6 +98,15 @@ export class PaymentsService {
     return this.payments.find((p) => p.paymentId === paymentId);
   }
 
+  findOneOrFail(paymentId: string): StoredIntent & { id: string } {
+    const payment = this.payments.find((p) => p.paymentId === paymentId) as
+      (StoredIntent & { id: string }) | undefined;
+    if (!payment) {
+      throw new NotFoundException(`Payment ${paymentId} not found`);
+    }
+    return payment;
+  }
+
   private updateStatus(
     id: string,
     status: PaymentStatus,

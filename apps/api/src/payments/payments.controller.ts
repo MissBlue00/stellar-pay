@@ -88,10 +88,33 @@ export class PaymentsController {
     return this.depositAddressService.generateAddress(paymentId, dto.network);
   }
 
+  @Get(':paymentId')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Get a payment intent' })
+  @ApiResponse({ status: 404, description: 'Payment intent not found' })
+  getPayment(
+    @Param('paymentId') paymentId: string,
+    @CurrentMerchant() merchant: MerchantUser,
+  ) {
+    const intent = this.paymentsService.findOneOrFail(paymentId);
+    if (intent.merchantId !== merchant.merchant_id) {
+      throw new NotFoundException('Payment intent not found');
+    }
+    return intent;
+  }
+
   @Get(':paymentId/deposit-addresses')
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'List deposit addresses for a payment intent' })
-  getDepositAddresses(@Param('paymentId') paymentId: string): DepositAddress[] {
+  @ApiResponse({ status: 404, description: 'Payment intent not found' })
+  getDepositAddresses(
+    @Param('paymentId') paymentId: string,
+    @CurrentMerchant() merchant: MerchantUser,
+  ): DepositAddress[] {
+    const intent = this.paymentsService.findOneOrFail(paymentId);
+    if (intent.merchantId !== merchant.merchant_id) {
+      throw new NotFoundException('Payment intent not found');
+    }
     return this.depositAddressService.getAddressesByPaymentId(paymentId);
   }
 }
