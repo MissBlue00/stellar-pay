@@ -38,14 +38,46 @@ var StellarService = class {
       throw error;
     }
   }
+  async verifyPayment(params) {
+    const { txHash, expectedDestination, expectedAmount, expectedAssetCode, expectedAssetIssuer } = params;
+    try {
+      const transaction = await this.server.transactions().transaction(txHash).call();
+      const operations = await this.server.operations().forTransaction(txHash).call();
+      const paymentOp = operations.records.find(
+        (op) => op.type === "payment" || op.type === "path_payment_strict_receive" || op.type === "path_payment_strict_send"
+      );
+      if (!paymentOp) {
+        return {
+          verified: false,
+          amount: "",
+          asset: "",
+          source: transaction.source_account,
+          memo: typeof transaction.memo === "string" ? transaction.memo : null,
+          timestamp: transaction.created_at
+        };
+      }
+      const paymentAssetCode = paymentOp.asset_code || "XLM";
+      const paymentAssetIssuer = paymentOp.asset_issuer;
+      const asset = paymentAssetCode + (paymentAssetIssuer ? `:${paymentAssetIssuer}` : "");
+      const destinationMatch = paymentOp.to === expectedDestination;
+      const amountMatch = paymentOp.amount === expectedAmount;
+      const assetCodeMatch = !expectedAssetCode || paymentAssetCode === expectedAssetCode;
+      const assetIssuerMatch = !expectedAssetIssuer || paymentAssetIssuer === expectedAssetIssuer;
+      return {
+        verified: destinationMatch && amountMatch && assetCodeMatch && assetIssuerMatch,
+        amount: paymentOp.amount,
+        asset,
+        source: paymentOp.from,
+        memo: typeof transaction.memo === "string" ? transaction.memo : null,
+        timestamp: transaction.created_at
+      };
+    } catch (error) {
+      console.error("Failed to verify payment:", error);
+      throw error;
+    }
+  }
   async createReceivePayment(params) {
-    const {
-      address,
-      timeoutMs = 3e4,
-      assetCode,
-      assetIssuer,
-      from
-    } = params;
+    const { address, timeoutMs = 3e4, assetCode, assetIssuer, from } = params;
     if (!StellarSdk.StrKey.isValidEd25519PublicKey(address)) {
       throw new Error(`Invalid Stellar address: ${address}`);
     }
@@ -109,6 +141,12 @@ var StellarService = class {
     });
   }
 };
+
+// src/index.ts
+var stellarService = new StellarService();
+async function sendStellarPayment(to, amount, asset) {
+  return stellarService.sendFunds(to, amount.toString(), asset === "XLM" ? void 0 : asset);
+}
 export {
-  StellarService
+  sendStellarPayment
 };
