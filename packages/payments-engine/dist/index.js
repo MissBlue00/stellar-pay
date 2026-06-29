@@ -79,6 +79,29 @@ var StellarService = class {
       throw error;
     }
   }
+  async checkTrustline(destination, assetCode, assetIssuer) {
+    const account = await this.server.loadAccount(destination);
+    return account.balances.some(
+      (balance) => balance.asset_code === assetCode && balance.asset_issuer === assetIssuer
+    );
+  }
+  async createAssetPayment(params) {
+    const { destination, assetCode, assetIssuer, amount } = params;
+    const hasTrustline = await this.checkTrustline(destination, assetCode, assetIssuer);
+    if (!hasTrustline) {
+      throw new Error(
+        `Destination account ${destination} does not have a trustline for ${assetCode}:${assetIssuer}`
+      );
+    }
+    const transactionHash = await this.sendFunds(destination, amount, assetCode, assetIssuer);
+    return {
+      transactionHash,
+      assetCode,
+      assetIssuer,
+      amount,
+      destination
+    };
+  }
   async verifyPayment(params) {
     const { txHash, expectedDestination, expectedAmount, expectedAssetCode, expectedAssetIssuer } = params;
     try {
@@ -180,36 +203,6 @@ var StellarService = class {
         reject(error);
       }
     });
-  }
-  async createAssetPayment(params) {
-    const { destination, amount, assetCode, assetIssuer } = params;
-    if (!StellarSdk.StrKey.isValidEd25519PublicKey(destination)) {
-      throw new Error(`Invalid Stellar address: ${destination}`);
-    }
-    const hasTrustline = await this.verifyTrustline(destination, assetCode, assetIssuer);
-    if (!hasTrustline) {
-      throw new Error(
-        `Destination account ${destination} does not have a trustline for ${assetCode}:${assetIssuer}`
-      );
-    }
-    const transactionHash = await this.sendFunds(destination, amount, assetCode, assetIssuer);
-    return {
-      transactionHash,
-      assetCode,
-      assetIssuer,
-      amount,
-      destination
-    };
-  }
-  async verifyTrustline(destination, assetCode, assetIssuer) {
-    try {
-      const account = await this.server.loadAccount(destination);
-      return account.balances.some(
-        (b) => "asset_code" in b && b.asset_code === assetCode && b.asset_issuer === assetIssuer
-      );
-    } catch {
-      throw new Error(`Unable to verify trustline for ${destination}`);
-    }
   }
 };
 
