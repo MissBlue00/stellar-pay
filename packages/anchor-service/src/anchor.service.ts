@@ -22,6 +22,7 @@ import type {
 import type { KycStatusResponse } from './interfaces/kyc.interface';
 import type { FeeQuote, TransactionType } from './interfaces/fee.interface';
 import type { PaymentStatusResponse } from './interfaces/payment-status.interface';
+import type { DepositParams, DepositResponse } from './interfaces/sep24.interface';
 
 interface CustomerRecord {
   customerId: string;
@@ -53,11 +54,24 @@ interface Sep31PaymentRecord {
   updatedAt: string;
 }
 
+interface Sep24DepositRecord {
+  transactionId: string;
+  account: string;
+  assetCode: string;
+  amount?: string;
+  status: 'pending' | 'incomplete' | 'completed' | 'failed';
+  interactiveUrl?: string;
+  error?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export class AnchorService {
   private readonly payments = new Map<string, Sep31PaymentRecord>();
   private readonly transactions = new Map<string, AnchorTransaction>();
   private readonly customers = new Map<string, CustomerRecord>();
   private readonly accountLinks = new Map<string, string>();
+  private readonly sep24Deposits = new Map<string, Sep24DepositRecord>();
 
   // ---------------------------------------------------------------------------
   // SEP-31 Direct Payment
@@ -694,6 +708,113 @@ export class AnchorService {
     return true;
   }
 
+  // ---------------------------------------------------------------------------
+  // SEP-24 Deposit Flow
+  // ---------------------------------------------------------------------------
+
+  async createSep24Deposit(params: DepositParams): Promise<DepositResponse> {
+    const transactionId = `sep24_${crypto.randomUUID().split('-').join('').slice(0, 16)}`;
+
+    try {
+      const interactiveUrl = this.buildInteractiveUrl(params, transactionId);
+
+      const record: Sep24DepositRecord = {
+        transactionId,
+        account: params.account,
+        assetCode: params.assetCode,
+        amount: params.amount,
+        status: 'pending',
+        interactiveUrl,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      this.sep24Deposits.set(transactionId, record);
+
+      return {
+        success: true,
+        transactionId,
+        interactiveUrl,
+        amount: params.amount,
+        assetCode: params.assetCode,
+        status: 'pending',
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt,
+      };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+
+      const record: Sep24DepositRecord = {
+        transactionId,
+        account: params.account,
+        assetCode: params.assetCode,
+        amount: params.amount,
+        status: 'failed',
+        error: errorMessage,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      this.sep24Deposits.set(transactionId, record);
+
+      return {
+        success: false,
+        transactionId,
+        error: errorMessage,
+        amount: params.amount,
+        assetCode: params.assetCode,
+        status: 'failed',
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt,
+      };
+    }
+  }
+
+  getSep24Deposit(transactionId: string): Sep24DepositRecord | undefined {
+    return this.sep24Deposits.get(transactionId);
+  }
+
+  getAllSep24Deposits(): Sep24DepositRecord[] {
+    return Array.from(this.sep24Deposits.values());
+  }
+
+  private buildInteractiveUrl(params: DepositParams, transactionId: string): string {
+    const url = new URL(params.anchorUrl);
+    const pathname = url.pathname.replace(/\/$/, '');
+    url.pathname = `${pathname}/deposit/interactive`;
+    
+    url.searchParams.set('account', params.account);
+    url.searchParams.set('asset_code', params.assetCode);
+    url.searchParams.set('transaction_id', transactionId);
+    
+    if (params.memo) {
+      url.searchParams.set('memo', params.memo);
+    }
+    if (params.memoType) {
+      url.searchParams.set('memo_type', params.memoType);
+    }
+    if (params.amount) {
+      url.searchParams.set('amount', params.amount);
+    }
+    if (params.lang) {
+      url.searchParams.set('lang', params.lang);
+    }
+    if (params.destinationExtra) {
+      url.searchParams.set('destination_extra', params.destinationExtra);
+    }
+    if (params.destinationExtraMemo) {
+      url.searchParams.set('destination_extra_memo', params.destinationExtraMemo);
+    }
+    if (params.onChangeCallback) {
+      url.searchParams.set('on_change_callback', params.onChangeCallback);
+    }
+    if (params.quoteId) {
+      url.searchParams.set('quote_id', params.quoteId);
+    }
+
+    return url.toString();
+  }
+
   getPaymentStatus(paymentId: string): PaymentStatusResponse | undefined {
     const payment = this.payments.get(paymentId);
     if (payment) {
@@ -718,6 +839,19 @@ export class AnchorService {
         createdAt: transaction.createdAt,
         updatedAt: transaction.updatedAt,
         error: transaction.errorMessage,
+      };
+    }
+
+    const sep24Deposit = this.sep24Deposits.get(paymentId);
+    if (sep24Deposit) {
+      return {
+        paymentId: sep24Deposit.transactionId,
+        status: sep24Deposit.status,
+        amount: sep24Deposit.amount ?? '',
+        assetCode: sep24Deposit.assetCode,
+        createdAt: sep24Deposit.createdAt,
+        updatedAt: sep24Deposit.updatedAt,
+        error: sep24Deposit.error,
       };
     }
 
