@@ -156,7 +156,6 @@ export class StellarService {
       destination,
     };
   }
-
   async verifyPayment(params: PaymentVerificationParams): Promise<PaymentVerificationResult> {
     const { txHash, expectedDestination, expectedAmount, expectedAssetCode, expectedAssetIssuer } =
       params;

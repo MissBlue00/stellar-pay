@@ -47,51 +47,40 @@ describe('createAssetPayment', () => {
     mockCreateAssetPayment.mockReset();
   });
 
+  const validParams = {
+    destination: 'GDESTINATION123',
+    amount: '100',
+    assetCode: 'USDC',
+    assetIssuer: 'GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5ZG34M4666Z',
+  };
+
   it('returns a PaymentResult on success', async () => {
-    const result = {
-      transactionHash: 'txhash123',
+    const expectedResult = {
+      transactionHash: 'abc123txhash',
       assetCode: 'USDC',
-      assetIssuer: 'GBISSUER123',
-      amount: '50',
-      destination: 'GDEST123',
+      assetIssuer: validParams.assetIssuer,
+      amount: '100',
+      destination: 'GDESTINATION123',
     };
-    mockCreateAssetPayment.mockResolvedValueOnce(result);
-
-    const payment = await createAssetPayment({
-      destination: 'GDEST123',
-      amount: '50',
-      assetCode: 'USDC',
-      assetIssuer: 'GBISSUER123',
-    });
-
-    expect(payment).toEqual(result);
+    mockCreateAssetPayment.mockResolvedValueOnce(expectedResult);
+    const result = await createAssetPayment(validParams);
+    expect(result).toEqual(expectedResult);
   });
 
-  it('passes params through to StellarService.createAssetPayment', async () => {
-    const params = {
-      destination: 'GDEST456',
-      amount: '100',
-      assetCode: 'EURT',
-      assetIssuer: 'GASSURER789',
-    };
+  it('passes the params to stellarService.createAssetPayment', async () => {
     mockCreateAssetPayment.mockResolvedValueOnce({
       transactionHash: 'hash',
-      ...params,
+      assetCode: 'USDC',
+      assetIssuer: validParams.assetIssuer,
+      amount: '100',
+      destination: 'GDESTINATION123',
     });
-
-    await createAssetPayment(params);
-    expect(mockCreateAssetPayment).toHaveBeenCalledWith(params);
+    await createAssetPayment(validParams);
+    expect(mockCreateAssetPayment).toHaveBeenCalledWith(validParams);
   });
 
   it('throws when createAssetPayment fails', async () => {
     mockCreateAssetPayment.mockRejectedValueOnce(new Error('Trustline not found'));
-    await expect(
-      createAssetPayment({
-        destination: 'GDEST',
-        amount: '10',
-        assetCode: 'USDC',
-        assetIssuer: 'GISS',
-      }),
-    ).rejects.toThrow('Trustline not found');
+    await expect(createAssetPayment(validParams)).rejects.toThrow('Trustline not found');
   });
 });
