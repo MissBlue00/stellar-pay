@@ -1,5 +1,104 @@
 import * as StellarSdk from 'stellar-sdk';
 
+export type MemoType = 'text' | 'id' | 'hash' | 'none' | 'return';
+
+export interface ParsedPaymentMemo {
+  type: MemoType;
+  value: string | null;
+  valid: boolean;
+}
+
+export function parsePaymentMemo(memo: StellarSdk.Memo | null | undefined): ParsedPaymentMemo {
+  if (!memo) {
+    return {
+      type: 'none',
+      value: null,
+      valid: true,
+    };
+  }
+
+  try {
+    let type: MemoType;
+    let value: string | null = null;
+    let valid = true;
+
+    switch (memo.type) {
+      case StellarSdk.MemoText:
+        type = 'text';
+        value = memo.value;
+        break;
+      case StellarSdk.MemoID:
+        type = 'id';
+        value = memo.value.toString();
+        break;
+      case StellarSdk.MemoHash:
+      case StellarSdk.MemoReturn:
+        type = memo.type === StellarSdk.MemoHash ? 'hash' : 'return';
+        value = memo.value.toString('hex');
+        break;
+      case StellarSdk.MemoNone:
+        type = 'none';
+        value = null;
+        break;
+      default:
+        type = 'none';
+        value = null;
+        valid = false;
+    }
+
+    return {
+      type,
+      value,
+      valid,
+    };
+  } catch {
+    return {
+      type: 'none',
+      value: null,
+      valid: false,
+    };
+  }
+}
+
+export function parsePaymentMemoFromTransaction(
+  transaction: StellarSdk.Transaction | StellarSdk.Horizon.ServerApi.TransactionRecord,
+): ParsedPaymentMemo {
+  try {
+    if ('memo' in transaction) {
+      if (transaction.memo instanceof StellarSdk.Memo) {
+        return parsePaymentMemo(transaction.memo);
+      }
+      if (typeof transaction.memo === 'string') {
+        return {
+          type: 'text',
+          value: transaction.memo,
+          valid: true,
+        };
+      }
+      if (transaction.memo === null || transaction.memo === undefined) {
+        return {
+          type: 'none',
+          value: null,
+          valid: true,
+        };
+      }
+    }
+    return {
+      type: 'none',
+      value: null,
+      valid: false,
+    };
+  } catch {
+    return {
+      type: 'none',
+      value: null,
+      valid: false,
+    };
+  }
+}
+
+
+
 export interface ReceivePaymentParams {
   address: string;
   timeoutMs?: number;
