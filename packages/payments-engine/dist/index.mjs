@@ -1,3 +1,6 @@
+// src/index.ts
+import { TransactionBuilder as TransactionBuilder2, BASE_FEE as BASE_FEE2 } from "stellar-sdk";
+
 // src/stellar.service.ts
 import * as StellarSdk from "stellar-sdk";
 var StellarService = class {
@@ -39,13 +42,7 @@ var StellarService = class {
     }
   }
   async createReceivePayment(params) {
-    const {
-      address,
-      timeoutMs = 3e4,
-      assetCode,
-      assetIssuer,
-      from
-    } = params;
+    const { address, timeoutMs = 3e4, assetCode, assetIssuer, from } = params;
     if (!StellarSdk.StrKey.isValidEd25519PublicKey(address)) {
       throw new Error(`Invalid Stellar address: ${address}`);
     }
@@ -109,6 +106,21 @@ var StellarService = class {
     });
   }
 };
+
+// src/index.ts
+var stellarService = new StellarService();
+function createTransactionBuilder(source, server) {
+  const networkPassphrase = server.networkPassphrase || "";
+  return new TransactionBuilder2(source, {
+    fee: BASE_FEE2,
+    // FIX: Use the imported root BASE_FEE constant directly
+    networkPassphrase
+  });
+}
+async function sendStellarPayment(to, amount, asset) {
+  return stellarService.sendFunds(to, amount.toString(), asset === "XLM" ? void 0 : asset);
+}
 export {
-  StellarService
+  createTransactionBuilder,
+  sendStellarPayment
 };

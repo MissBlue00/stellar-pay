@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { Account, Horizon, TransactionBuilder, Networks } from 'stellar-sdk';
+import { sendStellarPayment, createTransactionBuilder } from './index';
 
 const mockSendFunds = vi.hoisted(() => vi.fn());
 
@@ -10,7 +12,31 @@ vi.mock('./stellar.service', () => {
   };
 });
 
-import { sendStellarPayment } from './index';
+describe('createTransactionBuilder', () => {
+  it('creates a builder with testnet passphrase from server instance', () => {
+    const source = new Account('GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF', '1');
+    const testnetPassphrase = Networks.TESTNET;
+    const server = { networkPassphrase: testnetPassphrase } as unknown as Horizon.Server;
+
+    const builder = createTransactionBuilder(source, server);
+    
+    expect(builder).toBeInstanceOf(TransactionBuilder);
+    // @ts-ignore - accessing private field for verification
+    expect(builder.networkPassphrase).toBe(testnetPassphrase);
+  });
+
+  it('creates a builder with public passphrase from server instance', () => {
+    const source = new Account('GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF', '1');
+    const publicPassphrase = Networks.PUBLIC;
+    const server = { networkPassphrase: publicPassphrase } as unknown as Horizon.Server;
+
+    const builder = createTransactionBuilder(source, server);
+    
+    expect(builder).toBeInstanceOf(TransactionBuilder);
+    // @ts-ignore - accessing private field for verification
+    expect(builder.networkPassphrase).toBe(publicPassphrase);
+  });
+});
 
 describe('sendStellarPayment', () => {
   beforeEach(() => {
