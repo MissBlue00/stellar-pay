@@ -3,125 +3,89 @@ let prisma;
 async function main() {
   const { PrismaClient } = await import('@prisma/client');
   prisma = new PrismaClient();
-  const merchant = await prisma.merchant.upsert({
-    where: { email: 'dev-merchant@stellar-pay.local' },
-    update: { name: 'Stellar Pay Dev Merchant' },
+
+  const merchant1 = await prisma.merchant.upsert({
+    where: { email: 'merchant-one@stellar-pay.local' },
+    update: {},
     create: {
-      name: 'Stellar Pay Dev Merchant',
-      legalName: 'Stellar Pay Development LLC',
-      email: 'dev-merchant@stellar-pay.local',
-      users: {
-        create: {
-          email: 'owner@stellar-pay.local',
-          fullName: 'Dev Owner',
-          role: 'OWNER',
-        },
+      email: 'merchant-one@stellar-pay.local',
+      passwordHash: '$2b$10$placeholder_hash_for_dev_merchant_one',
+      kycStatus: 'APPROVED',
+      paymentIntents: {
+        create: [
+          {
+            amount: 2500,
+            currency: 'USD',
+            status: 'CONFIRMED',
+          },
+          {
+            amount: 5000,
+            currency: 'USD',
+            status: 'PENDING',
+          },
+        ],
       },
-      treasuryWallets: {
-        create: {
-          network: 'stellar',
-          publicKey: 'GDXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
-          encryptedSecret: 'encrypted-dev-secret',
-          isPrimary: true,
-        },
+      webhookEndpoints: {
+        create: [
+          {
+            url: 'https://example.com/webhooks/payments',
+            secret: 'whsec_dev_secret_one',
+          },
+        ],
       },
     },
   });
 
-  const customer = await prisma.customer.upsert({
-    where: {
-      merchantId_externalRef: {
-        merchantId: merchant.id,
-        externalRef: 'cust_dev_001',
-      },
-    },
-    update: { email: 'customer@stellar-pay.local' },
+  const merchant2 = await prisma.merchant.upsert({
+    where: { email: 'merchant-two@stellar-pay.local' },
+    update: {},
     create: {
-      merchantId: merchant.id,
-      externalRef: 'cust_dev_001',
-      email: 'customer@stellar-pay.local',
-      name: 'Dev Customer',
-      metadata: { source: 'seed' },
+      email: 'merchant-two@stellar-pay.local',
+      passwordHash: '$2b$10$placeholder_hash_for_dev_merchant_two',
+      kycStatus: 'PENDING',
+      paymentIntents: {
+        create: [
+          {
+            amount: 1200,
+            currency: 'EUR',
+            status: 'DETECTED',
+          },
+          {
+            amount: 999,
+            currency: 'USD',
+            status: 'FAILED',
+          },
+        ],
+      },
+      webhookEndpoints: {
+        create: [
+          {
+            url: 'https://example.com/webhooks/merchant-two',
+            secret: 'whsec_dev_secret_two',
+          },
+        ],
+      },
     },
   });
 
-  const paymentIntent = await prisma.paymentIntent.create({
-    data: {
-      merchantId: merchant.id,
-      customerId: customer.id,
-      amountMinor: 2500,
-      currency: 'USD',
-      description: 'Seeded payment intent',
-      idempotencyKey: `seed-${Date.now()}`,
-      status: 'PROCESSING',
-    },
-  });
+  const assets = [
+    { symbol: 'USDC', totalMinted: 1000000, totalReserved: 250000 },
+    { symbol: 'XLM', totalMinted: 50000000, totalReserved: 5000000 },
+  ];
 
-  await prisma.escrowTransaction.create({
-    data: {
-      paymentIntentId: paymentIntent.id,
-      network: 'stellar',
-      status: 'FUNDED',
-    },
-  });
+  for (const asset of assets) {
+    await prisma.treasuryAsset.upsert({
+      where: { symbol: asset.symbol },
+      update: {},
+      create: {
+        symbol: asset.symbol,
+        totalMinted: asset.totalMinted,
+        totalReserved: asset.totalReserved,
+      },
+    });
+  }
 
-  const now = new Date();
-  const periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-
-  const subscription = await prisma.subscription.create({
-    data: {
-      merchantId: merchant.id,
-      customerId: customer.id,
-      planCode: 'starter-monthly',
-      amountMinor: 1999,
-      currency: 'USD',
-      interval: 'MONTH',
-      status: 'ACTIVE',
-      currentPeriodStart: now,
-      currentPeriodEnd: periodEnd,
-    },
-  });
-
-  await prisma.subscriptionInvoice.create({
-    data: {
-      subscriptionId: subscription.id,
-      externalPaymentIntentId: paymentIntent.id,
-      amountMinor: 1999,
-      currency: 'USD',
-      status: 'PENDING',
-      dueAt: periodEnd,
-    },
-  });
-
-  await prisma.payout.create({
-    data: {
-      merchantId: merchant.id,
-      amountMinor: 1000,
-      currency: 'USD',
-      destination: 'GAXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
-      status: 'REQUESTED',
-    },
-  });
-
-  await prisma.webhookEvent.create({
-    data: {
-      merchantId: merchant.id,
-      provider: 'stripe',
-      eventType: 'payment_intent.succeeded',
-      payload: { demo: true },
-      status: 'RECEIVED',
-    },
-  });
-
-  await prisma.auditLog.create({
-    data: {
-      actorType: 'system',
-      action: 'seed.completed',
-      entityType: 'Merchant',
-      entityId: merchant.id,
-      metadata: { seededAt: now.toISOString() },
-    },
-  });
+  console.log('Seeded merchants:', merchant1.email, merchant2.email);
 }
 
 main()

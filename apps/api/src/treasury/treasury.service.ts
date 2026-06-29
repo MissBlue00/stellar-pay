@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import * as StellarSdk from '@stellar/stellar-sdk';
-import { AssetReserve, RedeemResponse } from './interfaces/proof-of-reserves.interface';
+import { RedeemResponse } from './interfaces/proof-of-reserves.interface';
 import { RedemptionRepository } from '../modules/database/redemption.repository';
 import { RedeemDto } from './dto/redeem.dto';
 
@@ -18,24 +18,6 @@ interface HorizonBalanceRecord {
   asset_code?: string;
   asset_issuer?: string;
   balance: string;
-}
-
-interface SorobanBurnResult {
-  hash?: string;
-  transactionHash?: string;
-  id?: string;
-}
-
-interface SorobanClient {
-  contractCall(
-    contractId: string,
-    functionName: string,
-    args: unknown[],
-  ): Promise<SorobanBurnResult>;
-}
-
-interface SorobanClientConstructor {
-  new (url: string): SorobanClient;
 }
 
 @Injectable()
@@ -353,27 +335,45 @@ export class TreasuryService {
 
     const sorobanRpcUrl = process.env.SOROBAN_RPC_URL;
     const contractId = process.env.MIRROR_ASSET_CONTRACT_ID;
-    if (!sorobanRpcUrl || !contractId) {
+    const storageSecret = process.env.STELLAR_STORAGE_SECRET;
+
+    if (!sorobanRpcUrl || !contractId || !storageSecret) {
       throw new BadRequestException(
-        'SOROBAN_RPC_URL and MIRROR_ASSET_CONTRACT_ID must be configured for redemption',
+        'SOROBAN_RPC_URL, MIRROR_ASSET_CONTRACT_ID, and STELLAR_STORAGE_SECRET must be configured for redemption',
       );
     }
 
     // 2. Invoke Soroban burn function
-    const SorobanClient = (StellarSdk as unknown as { SorobanClient: SorobanClientConstructor })
-      .SorobanClient;
-    const sorobanClient = new SorobanClient(sorobanRpcUrl);
-    const burnTx = await sorobanClient.contractCall(contractId, 'burn', [
-      merchantId,
-      dto.amount.toString(),
-      dto.currency,
-    ]);
+    const rpcServer = new Server(sorobanRpcUrl, { allowHttp: true });
+    const keypair = StellarSdk.Keypair.fromSecret(storageSecret);
+    const sourceAccount = await rpcServer.getAccount(keypair.publicKey());
 
-    const burnTxHash =
-      burnTx.hash ||
-      burnTx.transactionHash ||
-      burnTx.id ||
-      `burn_${crypto.randomUUID().split('-').join('').slice(0, 16)}`;
+    const contract = new StellarSdk.Contract(contractId);
+
+    const transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
+      fee: StellarSdk.BASE_FEE,
+      networkPassphrase: StellarSdk.Networks.TESTNET,
+    })
+      .addOperation(
+        contract.call(
+          'burn',
+          new StellarSdk.Address(merchantId).toScVal(),
+          StellarSdk.nativeToScVal(dto.amount, { type: 'i128' }),
+          StellarSdk.nativeToScVal(dto.currency, { type: 'symbol' }),
+        ),
+      )
+      .setTimeout(30)
+      .build();
+
+    const preparedTx = await rpcServer.prepareTransaction(transaction);
+    preparedTx.sign(keypair);
+    const sendResult = await rpcServer.sendTransaction(preparedTx);
+
+    if (sendResult.status === 'ERROR') {
+      throw new Error('Burn transaction submission failed');
+    }
+
+    const burnTxHash = sendResult.hash;
 
     // 3. Deduct balance after successful burn
     balance.balance -= dto.amount;

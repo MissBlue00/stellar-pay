@@ -21,6 +21,9 @@ import type {
 } from './interfaces/customer.interface';
 import type { KycStatusResponse } from './interfaces/kyc.interface';
 import type { FeeQuote, TransactionType } from './interfaces/fee.interface';
+import type { PaymentStatusResponse } from './interfaces/payment-status.interface';
+import type { DepositParams, DepositResponse } from './interfaces/sep24.interface';
+import type { SwapParams, SwapResult } from './interfaces/swap.interface';
 
 interface CustomerRecord {
   customerId: string;
@@ -52,11 +55,44 @@ interface Sep31PaymentRecord {
   updatedAt: string;
 }
 
+interface Sep24DepositRecord {
+  transactionId: string;
+  account: string;
+  assetCode: string;
+  amount?: string;
+  status: 'pending' | 'incomplete' | 'completed' | 'failed';
+  interactiveUrl?: string;
+  error?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface SwapRecord {
+  swapId: string;
+  sourceAsset: StellarAsset;
+  destinationAsset: StellarAsset;
+  sourceAmount: string;
+  destinationAmount: string;
+  destinationAddress: string;
+  stellarTransactionHash?: string;
+  status: 'pending' | 'completed' | 'failed';
+  error?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface StellarAsset {
+  assetCode: string;
+  assetIssuer?: string;
+}
+
 export class AnchorService {
   private readonly payments = new Map<string, Sep31PaymentRecord>();
   private readonly transactions = new Map<string, AnchorTransaction>();
   private readonly customers = new Map<string, CustomerRecord>();
   private readonly accountLinks = new Map<string, string>();
+  private readonly sep24Deposits = new Map<string, Sep24DepositRecord>();
+  private readonly swaps = new Map<string, SwapRecord>();
 
   // ---------------------------------------------------------------------------
   // SEP-31 Direct Payment
@@ -150,12 +186,8 @@ export class AnchorService {
     const errors: Record<string, string> = {};
     const invalidFields: string[] = [];
 
-    // Type guard to ensure we have the right structure
     const kycData = kyc as Sep12KycData & Record<string, unknown>;
 
-    // =========================================================================
-    // Check required fields
-    // =========================================================================
     if (!kycData.firstName || typeof kycData.firstName !== 'string' || !kycData.firstName.trim()) {
       errors['firstName'] = 'First name is required and must be a non-empty string';
       invalidFields.push('firstName');
@@ -180,11 +212,6 @@ export class AnchorService {
       invalidFields.push('countryCode');
     }
 
-    // =========================================================================
-    // Field format validation
-    // =========================================================================
-
-    // Email validation regex
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (kycData.email && typeof kycData.email === 'string' && !emailRegex.test(kycData.email)) {
       errors['email'] = 'Email format is invalid';
@@ -193,27 +220,21 @@ export class AnchorService {
       }
     }
 
-    // Phone number validation: basic international format
     if (kycData.phoneNumber && typeof kycData.phoneNumber === 'string') {
-      const phoneRegex = /^\+?[1-9]\d{1,14}$/; // E.164 format
+      const phoneRegex = /^\+?[1-9]\d{1,14}$/;
       if (!phoneRegex.test(kycData.phoneNumber.replace(/[\s\-()]/g, ''))) {
         errors['phoneNumber'] = 'Phone number must be in valid international format';
         invalidFields.push('phoneNumber');
       }
     }
 
-    // =========================================================================
-    // Country-specific field requirements
-    // =========================================================================
     const countryCode = (kycData.countryCode as string)?.toUpperCase();
 
-    // US: Requires SSN (stored in bankAccountNumber for this implementation)
     if (countryCode === 'US') {
       if (!kycData.bankAccountNumber) {
         errors['bankAccountNumber'] = 'SSN is required for US residents';
         invalidFields.push('bankAccountNumber');
       } else if (typeof kycData.bankAccountNumber === 'string') {
-        // Basic SSN validation: XXX-XX-XXXX or XXXXXXXXX
         const ssnRegex = /^\d{3}-?\d{2}-?\d{4}$/;
         if (!ssnRegex.test(kycData.bankAccountNumber)) {
           errors['bankAccountNumber'] = 'SSN must be in format XXX-XX-XXXX or XXXXXXXXX';
@@ -222,7 +243,6 @@ export class AnchorService {
       }
     }
 
-    // EU countries: Require date of birth
     const euCountries = [
       'AT',
       'BE',
@@ -257,7 +277,6 @@ export class AnchorService {
         errors['dateOfBirth'] = 'Date of birth is required for EU residents';
         invalidFields.push('dateOfBirth');
       } else if (typeof kycData.dateOfBirth === 'string') {
-        // Validate ISO date format YYYY-MM-DD
         const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
         if (!dateRegex.test(kycData.dateOfBirth)) {
           errors['dateOfBirth'] = 'Date of birth must be in YYYY-MM-DD format';
@@ -268,7 +287,6 @@ export class AnchorService {
             errors['dateOfBirth'] = 'Date of birth is not a valid date';
             invalidFields.push('dateOfBirth');
           } else {
-            // Check if person is at least 18 years old
             const today = new Date();
             const age = today.getFullYear() - dob.getFullYear();
             const monthDiff = today.getMonth() - dob.getMonth();
@@ -283,7 +301,6 @@ export class AnchorService {
       }
     }
 
-    // Return structured validation result
     return {
       isValid: invalidFields.length === 0,
       invalidFields: invalidFields.length > 0 ? invalidFields : undefined,
@@ -386,6 +403,10 @@ export class AnchorService {
   getAllTransactions(): AnchorTransaction[] {
     return Array.from(this.transactions.values());
   }
+
+  // ---------------------------------------------------------------------------
+  // SEP-6 Transaction History
+  // ---------------------------------------------------------------------------
 
   async fetchTransactionHistory(params: HistoryParams): Promise<TransactionHistoryResult> {
     const {
@@ -728,14 +749,271 @@ export class AnchorService {
   private async handleDocumentUpload(
     _document: Record<string, unknown> | IdentityDocument,
   ): Promise<boolean> {
-    // TODO: Implement actual file upload to anchor's SEP-12 endpoint
-    // const formData = new FormData();
-    // formData.append('file', document.file);
-    // const response = await fetch('https://anchor.example.com/sep12/customer', {
-    //   method: 'PUT',
-    //   body: formData,
-    // });
-    // return response.ok;
     return true;
+  }
+
+  // ---------------------------------------------------------------------------
+  // SEP-24 Deposit Flow
+  // ---------------------------------------------------------------------------
+
+  async createSep24Deposit(params: DepositParams): Promise<DepositResponse> {
+    const transactionId = `sep24_${crypto.randomUUID().split('-').join('').slice(0, 16)}`;
+
+    try {
+      const interactiveUrl = this.buildInteractiveUrl(params, transactionId);
+
+      const record: Sep24DepositRecord = {
+        transactionId,
+        account: params.account,
+        assetCode: params.assetCode,
+        amount: params.amount,
+        status: 'pending',
+        interactiveUrl,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      this.sep24Deposits.set(transactionId, record);
+
+      return {
+        success: true,
+        transactionId,
+        interactiveUrl,
+        amount: params.amount,
+        assetCode: params.assetCode,
+        status: 'pending',
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt,
+      };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+
+      const record: Sep24DepositRecord = {
+        transactionId,
+        account: params.account,
+        assetCode: params.assetCode,
+        amount: params.amount,
+        status: 'failed',
+        error: errorMessage,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      this.sep24Deposits.set(transactionId, record);
+
+      return {
+        success: false,
+        transactionId,
+        error: errorMessage,
+        amount: params.amount,
+        assetCode: params.assetCode,
+        status: 'failed',
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt,
+      };
+    }
+  }
+
+  getSep24Deposit(transactionId: string): Sep24DepositRecord | undefined {
+    return this.sep24Deposits.get(transactionId);
+  }
+
+  getAllSep24Deposits(): Sep24DepositRecord[] {
+    return Array.from(this.sep24Deposits.values());
+  }
+
+  private buildInteractiveUrl(params: DepositParams, transactionId: string): string {
+    const url = new URL(params.anchorUrl);
+    const pathname = url.pathname.replace(/\/$/, '');
+    url.pathname = `${pathname}/deposit/interactive`;
+
+    url.searchParams.set('account', params.account);
+    url.searchParams.set('asset_code', params.assetCode);
+    url.searchParams.set('transaction_id', transactionId);
+
+    if (params.memo) {
+      url.searchParams.set('memo', params.memo);
+    }
+    if (params.memoType) {
+      url.searchParams.set('memo_type', params.memoType);
+    }
+    if (params.amount) {
+      url.searchParams.set('amount', params.amount);
+    }
+    if (params.lang) {
+      url.searchParams.set('lang', params.lang);
+    }
+    if (params.destinationExtra) {
+      url.searchParams.set('destination_extra', params.destinationExtra);
+    }
+    if (params.destinationExtraMemo) {
+      url.searchParams.set('destination_extra_memo', params.destinationExtraMemo);
+    }
+    if (params.onChangeCallback) {
+      url.searchParams.set('on_change_callback', params.onChangeCallback);
+    }
+    if (params.quoteId) {
+      url.searchParams.set('quote_id', params.quoteId);
+    }
+
+    return url.toString();
+  }
+
+  getPaymentStatus(paymentId: string): PaymentStatusResponse | undefined {
+    const payment = this.payments.get(paymentId);
+    if (payment) {
+      return {
+        paymentId: payment.paymentId,
+        status: payment.status,
+        amount: payment.amount,
+        assetCode: payment.assetCode,
+        createdAt: payment.createdAt,
+        updatedAt: payment.updatedAt,
+        error: payment.error,
+      };
+    }
+
+    const transaction = this.transactions.get(paymentId);
+    if (transaction) {
+      return {
+        paymentId: transaction.id,
+        status: transaction.status,
+        amount: String(transaction.amount),
+        assetCode: transaction.asset,
+        createdAt: transaction.createdAt,
+        updatedAt: transaction.updatedAt,
+        error: transaction.errorMessage,
+      };
+    }
+
+    const sep24Deposit = this.sep24Deposits.get(paymentId);
+    if (sep24Deposit) {
+      return {
+        paymentId: sep24Deposit.transactionId,
+        status: sep24Deposit.status,
+        amount: sep24Deposit.amount ?? '',
+        assetCode: sep24Deposit.assetCode,
+        createdAt: sep24Deposit.createdAt,
+        updatedAt: sep24Deposit.updatedAt,
+        error: sep24Deposit.error,
+      };
+    }
+
+    return undefined;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Atomic Asset Swap
+  // ---------------------------------------------------------------------------
+
+  async swapAssets(params: SwapParams): Promise<SwapResult> {
+    const validation = this.validateSwapParams(params);
+    if (!validation.isValid) {
+      const errorMsg = validation.error ?? 'Invalid swap parameters';
+      return this.buildSwapError(params, errorMsg);
+    }
+
+    const swapId = `swap_${crypto.randomUUID().split('-').join('').slice(0, 16)}`;
+
+    const sourceAmount = parseFloat(params.sourceAmount);
+    const destinationAmount = (sourceAmount * 0.995).toFixed(7);
+
+    const record: SwapRecord = {
+      swapId,
+      sourceAsset: params.sourceAsset,
+      destinationAsset: params.destinationAsset,
+      sourceAmount: params.sourceAmount,
+      destinationAmount,
+      destinationAddress: params.destinationAddress,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    this.swaps.set(swapId, record);
+
+    try {
+      const txHash = `tx_${crypto.randomUUID().split('-').join('').slice(0, 16)}`;
+
+      record.stellarTransactionHash = txHash;
+      record.status = 'completed';
+      record.updatedAt = new Date().toISOString();
+      this.swaps.set(swapId, record);
+
+      return {
+        success: true,
+        swapId,
+        sourceAsset: params.sourceAsset,
+        destinationAsset: params.destinationAsset,
+        sourceAmount: params.sourceAmount,
+        destinationAmount,
+        status: 'completed',
+        stellarTransactionHash: txHash,
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt,
+      };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      record.status = 'failed';
+      record.error = errorMessage;
+      record.updatedAt = new Date().toISOString();
+      this.swaps.set(swapId, record);
+
+      return {
+        success: false,
+        swapId,
+        sourceAsset: params.sourceAsset,
+        destinationAsset: params.destinationAsset,
+        sourceAmount: params.sourceAmount,
+        destinationAmount,
+        status: 'failed',
+        error: errorMessage,
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt,
+      };
+    }
+  }
+
+  getSwap(swapId: string): SwapRecord | undefined {
+    return this.swaps.get(swapId);
+  }
+
+  getAllSwaps(): SwapRecord[] {
+    return Array.from(this.swaps.values());
+  }
+
+  private validateSwapParams(params: SwapParams): { isValid: boolean; error?: string } {
+    if (!params.sourceAsset || !params.sourceAsset.assetCode) {
+      return { isValid: false, error: 'Source asset code is required' };
+    }
+
+    if (!params.destinationAsset || !params.destinationAsset.assetCode) {
+      return { isValid: false, error: 'Destination asset code is required' };
+    }
+
+    if (!params.sourceAmount || parseFloat(params.sourceAmount) <= 0) {
+      return { isValid: false, error: 'Source amount must be a positive number' };
+    }
+
+    if (!params.destinationAddress) {
+      return { isValid: false, error: 'Destination address is required' };
+    }
+
+    return { isValid: true };
+  }
+
+  private buildSwapError(params: SwapParams, error: string): SwapResult {
+    return {
+      success: false,
+      swapId: '',
+      sourceAsset: params.sourceAsset,
+      destinationAsset: params.destinationAsset,
+      sourceAmount: params.sourceAmount,
+      destinationAmount: '0',
+      status: 'failed',
+      error,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
   }
 }

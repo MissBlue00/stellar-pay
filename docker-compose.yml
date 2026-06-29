@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: stellar-pay-postgres
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: stellar_pay
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - stellar-pay-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: stellar-pay-redis
+    ports:
+      - '6379:6379'
+    networks:
+      - stellar-pay-network
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: stellar-pay-api
+    ports:
+      - '3000:3000'
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://user:password@postgres:5432/stellar_pay
+      - REDIS_URL=redis://redis:6379
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - stellar-pay-network
+
+volumes:
+  postgres_data:
+
+networks:
+  stellar-pay-network:
+    driver: bridge

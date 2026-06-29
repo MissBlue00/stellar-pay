@@ -1,5 +1,6 @@
 import { Account, Horizon, TransactionBuilder, BASE_FEE } from 'stellar-sdk';
 import { StellarService } from './stellar.service';
+import { StellarService, type AssetPaymentParams, type PaymentResult } from './stellar.service';
 
 const stellarService = new StellarService();
 
@@ -27,3 +28,28 @@ export async function sendStellarPayment(
 ): Promise<string> {
   return stellarService.sendFunds(to, amount.toString(), asset === 'XLM' ? undefined : asset);
 }
+
+export async function createAssetPayment(params: AssetPaymentParams): Promise<PaymentResult> {
+  return stellarService.createAssetPayment(params);
+}
+
+export type {
+  Horizon,
+  PaymentChannelStatus,
+  PaymentChannelAsset,
+  PaymentChannelDistribution,
+  PaymentChannelSigner,
+  PaymentChannel,
+  PaymentChannelConfig,
+  ChannelCloseResult,
+} from './payment-channel';
+
+export {
+  buildChannelCloseTransaction,
+  closePaymentChannel,
+  createPaymentChannel,
+} from './payment-channel';
+
+export { buildSignedTransaction } from './transaction';
+
+export * from './stellar.service';

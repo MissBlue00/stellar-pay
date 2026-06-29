@@ -1,5 +1,104 @@
 import * as StellarSdk from 'stellar-sdk';
 
+export type MemoType = 'text' | 'id' | 'hash' | 'none' | 'return';
+
+export interface ParsedPaymentMemo {
+  type: MemoType;
+  value: string | null;
+  valid: boolean;
+}
+
+export function parsePaymentMemo(memo: StellarSdk.Memo | null | undefined): ParsedPaymentMemo {
+  if (!memo) {
+    return {
+      type: 'none',
+      value: null,
+      valid: true,
+    };
+  }
+
+  try {
+    let type: MemoType;
+    let value: string | null = null;
+    let valid = true;
+
+    switch (memo.type) {
+      case StellarSdk.MemoText:
+        type = 'text';
+        value = memo.value;
+        break;
+      case StellarSdk.MemoID:
+        type = 'id';
+        value = memo.value.toString();
+        break;
+      case StellarSdk.MemoHash:
+      case StellarSdk.MemoReturn:
+        type = memo.type === StellarSdk.MemoHash ? 'hash' : 'return';
+        value = memo.value.toString('hex');
+        break;
+      case StellarSdk.MemoNone:
+        type = 'none';
+        value = null;
+        break;
+      default:
+        type = 'none';
+        value = null;
+        valid = false;
+    }
+
+    return {
+      type,
+      value,
+      valid,
+    };
+  } catch {
+    return {
+      type: 'none',
+      value: null,
+      valid: false,
+    };
+  }
+}
+
+export function parsePaymentMemoFromTransaction(
+  transaction: StellarSdk.Transaction | StellarSdk.Horizon.ServerApi.TransactionRecord,
+): ParsedPaymentMemo {
+  try {
+    if ('memo' in transaction) {
+      if (transaction.memo instanceof StellarSdk.Memo) {
+        return parsePaymentMemo(transaction.memo);
+      }
+      if (typeof transaction.memo === 'string') {
+        return {
+          type: 'text',
+          value: transaction.memo,
+          valid: true,
+        };
+      }
+      if (transaction.memo === null || transaction.memo === undefined) {
+        return {
+          type: 'none',
+          value: null,
+          valid: true,
+        };
+      }
+    }
+    return {
+      type: 'none',
+      value: null,
+      valid: false,
+    };
+  } catch {
+    return {
+      type: 'none',
+      value: null,
+      valid: false,
+    };
+  }
+}
+
+
+
 export interface ReceivePaymentParams {
   address: string;
   timeoutMs?: number;
@@ -17,6 +116,38 @@ export interface ReceivePaymentResult {
   to: string;
   memo?: string | null;
   createdAt: string;
+}
+
+export interface PaymentVerificationParams {
+  txHash: string;
+  expectedDestination: string;
+  expectedAmount: string;
+  expectedAssetCode?: string;
+  expectedAssetIssuer?: string;
+}
+
+export interface AssetPaymentParams {
+  destination: string;
+  assetCode: string;
+  assetIssuer: string;
+  amount: string;
+}
+
+export interface PaymentResult {
+  transactionHash: string;
+  assetCode: string;
+  assetIssuer: string;
+  amount: string;
+  destination: string;
+}
+
+export interface PaymentVerificationResult {
+  verified: boolean;
+  amount: string;
+  asset: string;
+  source: string;
+  memo?: string | null;
+  timestamp: string;
 }
 
 type IncomingPaymentRecord =
@@ -84,6 +215,93 @@ export class StellarService {
     } catch (error) {
       console.error('Stellar transaction failed:', error);
       throw error; // Rethrow to let the worker handle the failure state
+    }
+  }
+
+  async checkTrustline(
+    destination: string,
+    assetCode: string,
+    assetIssuer: string,
+  ): Promise<boolean> {
+    const account = await this.server.loadAccount(destination);
+    return account.balances.some(
+      (balance) =>
+        (balance as StellarSdk.Horizon.HorizonApi.BalanceLineAsset).asset_code === assetCode &&
+        (balance as StellarSdk.Horizon.HorizonApi.BalanceLineAsset).asset_issuer === assetIssuer,
+    );
+  }
+
+  async createAssetPayment(params: AssetPaymentParams): Promise<PaymentResult> {
+    const { destination, assetCode, assetIssuer, amount } = params;
+
+    if (!StellarSdk.StrKey.isValidEd25519PublicKey(destination)) {
+      throw new Error(`Invalid destination address: ${destination}`);
+    }
+
+    const hasTrustline = await this.checkTrustline(destination, assetCode, assetIssuer);
+    if (!hasTrustline) {
+      throw new Error(
+        `Destination account ${destination} does not have a trustline for ${assetCode}:${assetIssuer}`,
+      );
+    }
+
+    const transactionHash = await this.sendFunds(destination, amount, assetCode, assetIssuer);
+
+    return {
+      transactionHash,
+      assetCode,
+      assetIssuer,
+      amount,
+      destination,
+    };
+  }
+  async verifyPayment(params: PaymentVerificationParams): Promise<PaymentVerificationResult> {
+    const { txHash, expectedDestination, expectedAmount, expectedAssetCode, expectedAssetIssuer } =
+      params;
+
+    try {
+      const transaction = await this.server.transactions().transaction(txHash).call();
+
+      const operations = await this.server.operations().forTransaction(txHash).call();
+
+      const paymentOp = operations.records.find(
+        (op) =>
+          op.type === 'payment' ||
+          op.type === 'path_payment_strict_receive' ||
+          op.type === 'path_payment_strict_send',
+      ) as IncomingPaymentRecord | undefined;
+
+      if (!paymentOp) {
+        return {
+          verified: false,
+          amount: '',
+          asset: '',
+          source: transaction.source_account,
+          memo: typeof transaction.memo === 'string' ? transaction.memo : null,
+          timestamp: transaction.created_at,
+        };
+      }
+
+      const paymentAssetCode = paymentOp.asset_code || 'XLM';
+      const paymentAssetIssuer = paymentOp.asset_issuer;
+      const asset = paymentAssetCode + (paymentAssetIssuer ? `:${paymentAssetIssuer}` : '');
+
+      const destinationMatch = paymentOp.to === expectedDestination;
+      const amountMatch = paymentOp.amount === expectedAmount;
+      const assetCodeMatch = !expectedAssetCode || paymentAssetCode === expectedAssetCode;
+      const assetIssuerMatch = !expectedAssetIssuer || paymentAssetIssuer === expectedAssetIssuer;
+
+      return {
+        verified: destinationMatch && amountMatch && assetCodeMatch && assetIssuerMatch,
+        amount: paymentOp.amount,
+        asset,
+        source: paymentOp.from,
+        memo: typeof transaction.memo === 'string' ? transaction.memo : null,
+        timestamp: transaction.created_at,
+      };
+    } catch (error) {
+      console.error('Failed to verify payment:', error);
+      throw error;
     }
   }
 

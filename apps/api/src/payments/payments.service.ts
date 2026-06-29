@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { type CreatePaymentIntentDto } from './dto/create-payment-intent.dto.js';
 import { WebhookService } from '../webhooks/webhook.service';
 import { WebhookEventType } from '../webhooks/interfaces/webhook-event.interface';
@@ -33,6 +33,7 @@ export type PaymentIntent = StoredIntent & { id: string };
 
 @Injectable()
 export class PaymentsService {
+  private readonly logger = new Logger(PaymentsService.name);
   private readonly payments: StoredIntent[] = [];
 
   constructor(private readonly webhookService: WebhookService) {}
@@ -63,14 +64,20 @@ export class PaymentsService {
 
     this.payments.push(payment);
 
-    void this.webhookService.dispatchEvent(merchantId, WebhookEventType.PAYMENT_CREATED, {
-      payment_id: payment.id,
-      amount: payment.amount,
-      currency: payment.currency,
-      status: payment.status,
-      metadata: payment.metadata,
-      created_at: payment.createdAt,
-    });
+    this.webhookService
+      .dispatchEvent(merchantId, WebhookEventType.PAYMENT_CREATED, {
+        payment_id: payment.id,
+        payment_reference: payment.paymentReference,
+        reference: payment.reference,
+        amount: payment.amount,
+        currency: payment.currency,
+        status: payment.status,
+        metadata: payment.metadata,
+        created_at: payment.createdAt,
+      })
+      .catch((err: Error) => {
+        this.logger.error(`Webhook dispatch failed for payment.created: ${err.message}`);
+      });
 
     return payment;
   }
@@ -91,27 +98,41 @@ export class PaymentsService {
     return this.payments.find((p) => p.paymentId === paymentId);
   }
 
+  findOneOrFail(paymentId: string): StoredIntent & { id: string } {
+    const payment = this.payments.find((p) => p.paymentId === paymentId) as
+      (StoredIntent & { id: string }) | undefined;
+    if (!payment) {
+      throw new NotFoundException(`Payment ${paymentId} not found`);
+    }
+    return payment;
+  }
+
   private updateStatus(
     id: string,
     status: PaymentStatus,
     event: WebhookEventType,
   ): StoredIntent & { id: string } {
     const payment = this.payments.find((p) => p.paymentId === id) as
-      | (StoredIntent & { id: string })
-      | undefined;
+      (StoredIntent & { id: string }) | undefined;
     if (!payment) throw new NotFoundException(`Payment ${id} not found`);
 
     payment.status = status;
     payment.updatedAt = new Date().toISOString();
 
-    void this.webhookService.dispatchEvent(payment.merchantId, event, {
-      payment_id: payment.id,
-      amount: payment.amount,
-      currency: payment.currency,
-      status: payment.status,
-      metadata: payment.metadata,
-      updated_at: payment.updatedAt,
-    });
+    this.webhookService
+      .dispatchEvent(payment.merchantId, event, {
+        payment_id: payment.id,
+        payment_reference: payment.paymentReference,
+        reference: payment.reference,
+        amount: payment.amount,
+        currency: payment.currency,
+        status: payment.status,
+        metadata: payment.metadata,
+        updated_at: payment.updatedAt,
+      })
+      .catch((err: Error) => {
+        this.logger.error(`Webhook dispatch failed for ${event}: ${err.message}`);
+      });
 
     return payment;
   }

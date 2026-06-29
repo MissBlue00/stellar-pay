@@ -8,6 +8,7 @@ import {
   Param,
   Post,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { CurrentMerchant } from '../auth/decorators/current-merchant.decorator.js';
 import { type MerchantUser } from '../auth/interfaces/merchant-user.interface.js';
@@ -26,6 +27,7 @@ export class PaymentsController {
   ) {}
 
   @Post()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @HttpCode(HttpStatus.CREATED)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Create a new payment intent' })
@@ -52,6 +54,7 @@ export class PaymentsController {
   }
 
   @Post(':paymentId/deposit-address')
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @HttpCode(HttpStatus.CREATED)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Generate a deposit address for a payment intent' })
@@ -85,10 +88,33 @@ export class PaymentsController {
     return this.depositAddressService.generateAddress(paymentId, dto.network);
   }
 
+  @Get(':paymentId')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Get a payment intent' })
+  @ApiResponse({ status: 404, description: 'Payment intent not found' })
+  getPayment(
+    @Param('paymentId') paymentId: string,
+    @CurrentMerchant() merchant: MerchantUser,
+  ) {
+    const intent = this.paymentsService.findOneOrFail(paymentId);
+    if (intent.merchantId !== merchant.merchant_id) {
+      throw new NotFoundException('Payment intent not found');
+    }
+    return intent;
+  }
+
   @Get(':paymentId/deposit-addresses')
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'List deposit addresses for a payment intent' })
-  getDepositAddresses(@Param('paymentId') paymentId: string): DepositAddress[] {
+  @ApiResponse({ status: 404, description: 'Payment intent not found' })
+  getDepositAddresses(
+    @Param('paymentId') paymentId: string,
+    @CurrentMerchant() merchant: MerchantUser,
+  ): DepositAddress[] {
+    const intent = this.paymentsService.findOneOrFail(paymentId);
+    if (intent.merchantId !== merchant.merchant_id) {
+      throw new NotFoundException('Payment intent not found');
+    }
     return this.depositAddressService.getAddressesByPaymentId(paymentId);
   }
 }

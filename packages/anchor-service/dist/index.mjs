@@ -4,6 +4,7 @@ var AnchorService = class {
   transactions = /* @__PURE__ */ new Map();
   customers = /* @__PURE__ */ new Map();
   accountLinks = /* @__PURE__ */ new Map();
+  sep24Deposits = /* @__PURE__ */ new Map();
   // ---------------------------------------------------------------------------
   // SEP-31 Direct Payment
   // ---------------------------------------------------------------------------
@@ -265,6 +266,9 @@ var AnchorService = class {
   getAllTransactions() {
     return Array.from(this.transactions.values());
   }
+  // ---------------------------------------------------------------------------
+  // SEP-6 Transaction History
+  // ---------------------------------------------------------------------------
   async fetchTransactionHistory(params) {
     const {
       anchorUrl,
@@ -537,7 +541,314 @@ var AnchorService = class {
   async handleDocumentUpload(_document) {
     return true;
   }
+  // ---------------------------------------------------------------------------
+  // SEP-24 Deposit Flow
+  // ---------------------------------------------------------------------------
+  async createSep24Deposit(params) {
+    const transactionId = `sep24_${crypto.randomUUID().split("-").join("").slice(0, 16)}`;
+    try {
+      const interactiveUrl = this.buildInteractiveUrl(params, transactionId);
+      const record = {
+        transactionId,
+        account: params.account,
+        assetCode: params.assetCode,
+        amount: params.amount,
+        status: "pending",
+        interactiveUrl,
+        createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+        updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+      };
+      this.sep24Deposits.set(transactionId, record);
+      return {
+        success: true,
+        transactionId,
+        interactiveUrl,
+        amount: params.amount,
+        assetCode: params.assetCode,
+        status: "pending",
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt
+      };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      const record = {
+        transactionId,
+        account: params.account,
+        assetCode: params.assetCode,
+        amount: params.amount,
+        status: "failed",
+        error: errorMessage,
+        createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+        updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+      };
+      this.sep24Deposits.set(transactionId, record);
+      return {
+        success: false,
+        transactionId,
+        error: errorMessage,
+        amount: params.amount,
+        assetCode: params.assetCode,
+        status: "failed",
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt
+      };
+    }
+  }
+  getSep24Deposit(transactionId) {
+    return this.sep24Deposits.get(transactionId);
+  }
+  getAllSep24Deposits() {
+    return Array.from(this.sep24Deposits.values());
+  }
+  buildInteractiveUrl(params, transactionId) {
+    const url = new URL(params.anchorUrl);
+    const pathname = url.pathname.replace(/\/$/, "");
+    url.pathname = `${pathname}/deposit/interactive`;
+    url.searchParams.set("account", params.account);
+    url.searchParams.set("asset_code", params.assetCode);
+    url.searchParams.set("transaction_id", transactionId);
+    if (params.memo) {
+      url.searchParams.set("memo", params.memo);
+    }
+    if (params.memoType) {
+      url.searchParams.set("memo_type", params.memoType);
+    }
+    if (params.amount) {
+      url.searchParams.set("amount", params.amount);
+    }
+    if (params.lang) {
+      url.searchParams.set("lang", params.lang);
+    }
+    if (params.destinationExtra) {
+      url.searchParams.set("destination_extra", params.destinationExtra);
+    }
+    if (params.destinationExtraMemo) {
+      url.searchParams.set("destination_extra_memo", params.destinationExtraMemo);
+    }
+    if (params.onChangeCallback) {
+      url.searchParams.set("on_change_callback", params.onChangeCallback);
+    }
+    if (params.quoteId) {
+      url.searchParams.set("quote_id", params.quoteId);
+    }
+    return url.toString();
+  }
+  getPaymentStatus(paymentId) {
+    const payment = this.payments.get(paymentId);
+    if (payment) {
+      return {
+        paymentId: payment.paymentId,
+        status: payment.status,
+        amount: payment.amount,
+        assetCode: payment.assetCode,
+        createdAt: payment.createdAt,
+        updatedAt: payment.updatedAt,
+        error: payment.error
+      };
+    }
+    const transaction = this.transactions.get(paymentId);
+    if (transaction) {
+      return {
+        paymentId: transaction.id,
+        status: transaction.status,
+        amount: String(transaction.amount),
+        assetCode: transaction.asset,
+        createdAt: transaction.createdAt,
+        updatedAt: transaction.updatedAt,
+        error: transaction.errorMessage
+      };
+    }
+    const sep24Deposit = this.sep24Deposits.get(paymentId);
+    if (sep24Deposit) {
+      return {
+        paymentId: sep24Deposit.transactionId,
+        status: sep24Deposit.status,
+        amount: sep24Deposit.amount ?? "",
+        assetCode: sep24Deposit.assetCode,
+        createdAt: sep24Deposit.createdAt,
+        updatedAt: sep24Deposit.updatedAt,
+        error: sep24Deposit.error
+      };
+    }
+    return void 0;
+  }
 };
+
+// src/sep10.ts
+var PUBLIC_NETWORK_PASSPHRASE = "Public Global Stellar Network ; September 2015";
+var DEFAULT_TOKEN_LIFETIME_SECONDS = 86400;
+var BASE64_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+function base64UrlEncode(value) {
+  const bytes = unescape(encodeURIComponent(value));
+  let output = "";
+  for (let i = 0; i < bytes.length; i += 3) {
+    const b1 = bytes.charCodeAt(i);
+    const b2 = i + 1 < bytes.length ? bytes.charCodeAt(i + 1) : NaN;
+    const b3 = i + 2 < bytes.length ? bytes.charCodeAt(i + 2) : NaN;
+    const e1 = b1 >> 2;
+    const e2 = (b1 & 3) << 4 | (Number.isNaN(b2) ? 0 : b2 >> 4);
+    const e3 = Number.isNaN(b2) ? -1 : (b2 & 15) << 2 | (Number.isNaN(b3) ? 0 : b3 >> 6);
+    const e4 = Number.isNaN(b3) ? -1 : b3 & 63;
+    output += BASE64_ALPHABET[e1];
+    output += BASE64_ALPHABET[e2];
+    output += e3 === -1 ? "" : BASE64_ALPHABET[e3];
+    output += e4 === -1 ? "" : BASE64_ALPHABET[e4];
+  }
+  return output.replace(/\+/g, "-").replace(/\//g, "_");
+}
+function validateConfig(config) {
+  if (!config.authEndpoint || !config.authEndpoint.trim()) {
+    throw new Error("authEndpoint is required");
+  }
+  if (!config.accountPublicKey || !/^G[A-Z2-7]{55}$/.test(config.accountPublicKey)) {
+    throw new Error("accountPublicKey must be a valid Stellar public key (G...)");
+  }
+  if (!config.accountSecretKey || !/^S[A-Z2-7]{55}$/.test(config.accountSecretKey)) {
+    throw new Error("accountSecretKey must be a valid Stellar secret key (S...)");
+  }
+  if (!config.homeDomain || !config.homeDomain.trim()) {
+    throw new Error("homeDomain is required");
+  }
+}
+function requestChallenge(config) {
+  const networkPassphrase = config.networkPassphrase ?? PUBLIC_NETWORK_PASSPHRASE;
+  const payload = JSON.stringify({
+    account: config.accountPublicKey,
+    homeDomain: config.homeDomain,
+    clientDomain: config.clientDomain,
+    memo: config.memo,
+    nonce: crypto.randomUUID(),
+    networkPassphrase
+  });
+  return {
+    transaction: base64UrlEncode(payload),
+    networkPassphrase
+  };
+}
+function signChallenge(challenge, config) {
+  const signature = crypto.randomUUID().split("-").join("");
+  const signed = JSON.stringify({
+    transaction: challenge.transaction,
+    signedBy: config.accountPublicKey,
+    signature
+  });
+  return base64UrlEncode(signed);
+}
+function issueToken(config) {
+  const issuedAt = Math.floor(Date.now() / 1e3);
+  const lifetime = config.tokenLifetimeSeconds ?? DEFAULT_TOKEN_LIFETIME_SECONDS;
+  const expiresAt = issuedAt + lifetime;
+  const header = base64UrlEncode(JSON.stringify({ alg: "EdDSA", typ: "JWT" }));
+  const subject = config.memo ? `${config.accountPublicKey}:${config.memo}` : config.accountPublicKey;
+  const claims = base64UrlEncode(
+    JSON.stringify({
+      iss: config.homeDomain,
+      sub: subject,
+      iat: issuedAt,
+      exp: expiresAt,
+      ...config.clientDomain ? { client_domain: config.clientDomain } : {}
+    })
+  );
+  const signature = base64UrlEncode(crypto.randomUUID().split("-").join(""));
+  return {
+    token: `${header}.${claims}.${signature}`,
+    issuedAt,
+    expiresAt
+  };
+}
+async function authenticateSep10(config) {
+  validateConfig(config);
+  const challenge = requestChallenge(config);
+  const signedChallenge = signChallenge(challenge, config);
+  void signedChallenge;
+  const { token, issuedAt, expiresAt } = issueToken(config);
+  return {
+    token,
+    account: config.accountPublicKey,
+    homeDomain: config.homeDomain,
+    issuedAt: new Date(issuedAt * 1e3).toISOString(),
+    expiresAt: new Date(expiresAt * 1e3).toISOString(),
+    ...config.clientDomain ? { clientDomain: config.clientDomain } : {}
+  };
+}
+
+// src/configure-anchor-assets.ts
+function validateAsset(asset) {
+  if (!asset.code || !asset.code.trim()) {
+    throw new Error("Asset code is required");
+  }
+  if (!asset.issuer || !/^G[A-Z2-7]{55}$/.test(asset.issuer)) {
+    throw new Error(
+      `Invalid issuer for asset ${asset.code}: must be a valid Stellar public key (G...)`
+    );
+  }
+  if (!asset.fiatEquivalent || !asset.fiatEquivalent.trim()) {
+    throw new Error(`fiatEquivalent is required for asset ${asset.code}`);
+  }
+  if (asset.feeRate < 0) {
+    throw new Error(`feeRate must be non-negative for asset ${asset.code}`);
+  }
+  const min = parseFloat(asset.minLimit);
+  const max = parseFloat(asset.maxLimit);
+  if (isNaN(min) || min < 0) {
+    throw new Error(`minLimit must be a non-negative number for asset ${asset.code}`);
+  }
+  if (isNaN(max) || max < 0) {
+    throw new Error(`maxLimit must be a non-negative number for asset ${asset.code}`);
+  }
+  if (max < min) {
+    throw new Error(`maxLimit cannot be less than minLimit for asset ${asset.code}`);
+  }
+}
+function configureAnchorAssets(assets) {
+  const store = /* @__PURE__ */ new Map();
+  for (const asset of assets) {
+    validateAsset(asset);
+    store.set(asset.code, asset);
+  }
+  return {
+    getAsset(code) {
+      return store.get(code);
+    },
+    getFiatEquivalent(stellarCode) {
+      const asset = store.get(stellarCode);
+      return asset?.fiatEquivalent;
+    },
+    validateLimits(code, amount) {
+      const asset = store.get(code);
+      if (!asset) {
+        return { valid: false, error: `Asset ${code} not found` };
+      }
+      const parsed = parseFloat(amount);
+      if (isNaN(parsed) || parsed < 0) {
+        return { valid: false, error: "Amount must be a non-negative number" };
+      }
+      if (parsed < parseFloat(asset.minLimit)) {
+        return {
+          valid: false,
+          error: `Amount ${amount} is below the minimum limit of ${asset.minLimit} for ${code}`
+        };
+      }
+      if (parsed > parseFloat(asset.maxLimit)) {
+        return {
+          valid: false,
+          error: `Amount ${amount} exceeds the maximum limit of ${asset.maxLimit} for ${code}`
+        };
+      }
+      return { valid: true };
+    },
+    getFeeConfig(code) {
+      const asset = store.get(code);
+      if (!asset) return void 0;
+      return { feeRate: asset.feeRate, feeFixed: asset.feeFixed };
+    },
+    getAllAssets() {
+      return Array.from(store.values());
+    }
+  };
+}
 export {
-  AnchorService
+  AnchorService,
+  authenticateSep10,
+  configureAnchorAssets
 };
