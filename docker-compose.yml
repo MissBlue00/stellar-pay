@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: stellar_pay
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -19,7 +19,7 @@ services:
     image: redis:7-alpine
     container_name: stellar-pay-redis
     ports:
-      - "6379:6379"
+      - '6379:6379'
     networks:
       - stellar-pay-network
 
@@ -29,7 +29,7 @@ services:
       dockerfile: apps/api/Dockerfile
     container_name: stellar-pay-api
     ports:
-      - "3000:3000"
+      - '3000:3000'
     env_file:
       - .env
     environment:

@@ -135,6 +135,10 @@ export class StellarService {
   async createAssetPayment(params: AssetPaymentParams): Promise<PaymentResult> {
     const { destination, assetCode, assetIssuer, amount } = params;
 
+    if (!StellarSdk.StrKey.isValidEd25519PublicKey(destination)) {
+      throw new Error(`Invalid destination address: ${destination}`);
+    }
+
     const hasTrustline = await this.checkTrustline(destination, assetCode, assetIssuer);
     if (!hasTrustline) {
       throw new Error(
@@ -152,7 +156,6 @@ export class StellarService {
       destination,
     };
   }
-
   async verifyPayment(params: PaymentVerificationParams): Promise<PaymentVerificationResult> {
     const { txHash, expectedDestination, expectedAmount, expectedAssetCode, expectedAssetIssuer } =
       params;

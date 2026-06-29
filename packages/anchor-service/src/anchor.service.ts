@@ -223,10 +223,33 @@ export class AnchorService {
     }
 
     const euCountries = [
-      'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE',
-      'FI', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT', 'LV',
-      'LT', 'LU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK',
-      'SI', 'ES', 'SE',
+      'AT',
+      'BE',
+      'BG',
+      'HR',
+      'CY',
+      'CZ',
+      'DK',
+      'EE',
+      'FI',
+      'FR',
+      'DE',
+      'GR',
+      'HU',
+      'IE',
+      'IT',
+      'LV',
+      'LT',
+      'LU',
+      'MT',
+      'NL',
+      'PL',
+      'PT',
+      'RO',
+      'SK',
+      'SI',
+      'ES',
+      'SE',
     ];
     if (euCountries.includes(countryCode)) {
       if (!kycData.dateOfBirth) {
@@ -782,11 +805,11 @@ export class AnchorService {
     const url = new URL(params.anchorUrl);
     const pathname = url.pathname.replace(/\/$/, '');
     url.pathname = `${pathname}/deposit/interactive`;
-    
+
     url.searchParams.set('account', params.account);
     url.searchParams.set('asset_code', params.assetCode);
     url.searchParams.set('transaction_id', transactionId);
-    
+
     if (params.memo) {
       url.searchParams.set('memo', params.memo);
     }
