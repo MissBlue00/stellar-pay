@@ -8,6 +8,7 @@ import {
   Param,
   Post,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { CurrentMerchant } from '../auth/decorators/current-merchant.decorator.js';
 import { type MerchantUser } from '../auth/interfaces/merchant-user.interface.js';
@@ -26,6 +27,7 @@ export class PaymentsController {
   ) {}
 
   @Post()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @HttpCode(HttpStatus.CREATED)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Create a new payment intent' })
@@ -52,6 +54,7 @@ export class PaymentsController {
   }
 
   @Post(':paymentId/deposit-address')
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @HttpCode(HttpStatus.CREATED)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Generate a deposit address for a payment intent' })

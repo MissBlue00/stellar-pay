@@ -1,4 +1,5 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { TreasuryService } from './treasury.service';
 import { ProofOfReservesResponse, RedeemResponse } from './interfaces/proof-of-reserves.interface';
@@ -27,6 +28,7 @@ export class TreasuryController {
   }
 
   @Post('redeem')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(HttpStatus.CREATED)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Redeem mirror assets back to base currency' })
