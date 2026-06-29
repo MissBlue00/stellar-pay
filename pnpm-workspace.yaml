@@ -7,7 +7,7 @@ allowBuilds:
   '@prisma/client': false
   '@prisma/engines': false
   '@scarf/scarf': false
-  bcrypt: set this to true or false
+  bcrypt: true
   esbuild: false
   msgpackr-extract: false
   msw: false

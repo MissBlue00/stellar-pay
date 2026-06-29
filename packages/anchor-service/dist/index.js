@@ -144,7 +144,35 @@ var AnchorService = class {
         }
       }
     }
-    const euCountries = ["AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE", "GR", "HU", "IE", "IT", "LV", "LT", "LU", "MT", "NL", "PL", "PT", "RO", "SK", "SI", "ES", "SE"];
+    const euCountries = [
+      "AT",
+      "BE",
+      "BG",
+      "HR",
+      "CY",
+      "CZ",
+      "DK",
+      "EE",
+      "FI",
+      "FR",
+      "DE",
+      "GR",
+      "HU",
+      "IE",
+      "IT",
+      "LV",
+      "LT",
+      "LU",
+      "MT",
+      "NL",
+      "PL",
+      "PT",
+      "RO",
+      "SK",
+      "SI",
+      "ES",
+      "SE"
+    ];
     if (euCountries.includes(countryCode)) {
       if (!kycData.dateOfBirth) {
         errors["dateOfBirth"] = "Date of birth is required for EU residents";
@@ -262,6 +290,102 @@ var AnchorService = class {
   }
   getAllTransactions() {
     return Array.from(this.transactions.values());
+  }
+  async fetchTransactionHistory(params) {
+    const {
+      anchorUrl,
+      account,
+      asset,
+      type,
+      status,
+      startDate,
+      endDate,
+      limit = 100,
+      cursor,
+      order
+    } = params;
+    const url = this.buildHistoryUrl(anchorUrl);
+    const query = url.searchParams;
+    if (account) query.set("account", account);
+    if (asset) query.set("asset_code", asset);
+    if (type) query.set("kind", type);
+    if (status) query.set("status", status);
+    if (startDate) query.set("start_time", this.formatHistoryTimestamp(startDate));
+    if (endDate) query.set("end_time", this.formatHistoryTimestamp(endDate));
+    query.set("limit", String(limit));
+    if (cursor) query.set("cursor", cursor);
+    if (order) query.set("order", order);
+    const response = await fetch(url.toString(), {
+      method: "GET",
+      headers: {
+        Accept: "application/json"
+      }
+    });
+    if (!response.ok) {
+      throw new Error(
+        `Anchor SEP-6 transaction history request failed: ${response.status} ${response.statusText}`
+      );
+    }
+    const data = await response.json();
+    const rawTransactions = Array.isArray(data.transactions) ? data.transactions : Array.isArray(data.records) ? data.records : void 0;
+    if (!rawTransactions) {
+      throw new Error("Unexpected SEP-6 response format: missing transactions");
+    }
+    const transactions = rawTransactions.map(
+      (tx) => this.normalizeAnchorTransaction(tx)
+    );
+    return {
+      transactions,
+      nextCursor: typeof data.next_cursor === "string" ? data.next_cursor : void 0,
+      limit,
+      total: typeof data.total === "number" ? data.total : void 0
+    };
+  }
+  buildHistoryUrl(anchorUrl) {
+    const url = new URL(anchorUrl);
+    const pathname = url.pathname.replace(/\/$/, "");
+    url.pathname = `${pathname}/transactions`;
+    return url;
+  }
+  formatHistoryTimestamp(value) {
+    if (value instanceof Date) {
+      return Math.floor(value.getTime() / 1e3).toString();
+    }
+    const parsed = Date.parse(value);
+    if (!Number.isNaN(parsed)) {
+      return Math.floor(parsed / 1e3).toString();
+    }
+    return value;
+  }
+  normalizeAnchorTransaction(raw) {
+    const createdAt = this.parseDateValue(raw.created_at ?? raw.createdAt);
+    const updatedAt = this.parseDateValue(raw.updated_at ?? raw.updatedAt);
+    return {
+      id: String(raw.id ?? raw.transaction_id ?? ""),
+      type: String(raw.kind ?? raw.type ?? ""),
+      amount: parseFloat(String(raw.amount ?? raw.amount_in ?? "0")),
+      amountRefunded: parseFloat(String(raw.amount_refunded ?? raw.amountRefunded ?? "0")),
+      status: String(raw.status ?? raw.transaction_status ?? ""),
+      asset: String(raw.asset_code ?? raw.asset ?? ""),
+      sourceAddress: String(raw.source ?? raw.source_address ?? raw.from ?? ""),
+      destinationAddress: String(raw.destination ?? raw.destination_address ?? raw.to ?? ""),
+      memo: raw.memo ? String(raw.memo) : void 0,
+      errorMessage: raw.error ? String(raw.error) : raw.error_message ? String(raw.error_message) : void 0,
+      createdAt,
+      updatedAt
+    };
+  }
+  parseDateValue(value) {
+    if (value instanceof Date) {
+      return value.toISOString();
+    }
+    if (typeof value === "string") {
+      const parsed = Date.parse(value);
+      if (!Number.isNaN(parsed)) {
+        return new Date(parsed).toISOString();
+      }
+    }
+    return (/* @__PURE__ */ new Date()).toISOString();
   }
   // ---------------------------------------------------------------------------
   // SEP-12 Customer Info
