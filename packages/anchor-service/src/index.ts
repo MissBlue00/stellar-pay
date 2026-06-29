@@ -10,3 +10,4 @@ export type {
   AnchorTransactionType,
   AnchorTransactionStatus,
 } from './interfaces/transaction.interface';
+export type { PaymentStatusResponse } from './interfaces/payment-status.interface';
