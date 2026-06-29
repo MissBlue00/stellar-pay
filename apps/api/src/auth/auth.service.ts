@@ -1,13 +1,16 @@
 import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/common';
-import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterMerchantDto } from './dto/register-merchant.dto';
 import { LoginMerchantDto } from './dto/login-merchant.dto';
+import { hashPassword, comparePassword } from './password.utils';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly prisma: PrismaService, private readonly jwtService: JwtService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
+  ) {}
 
   private parseExpiresInToSeconds(value: string): number {
     // Accepts values like '1h', '30m', or plain seconds '3600'
@@ -26,7 +29,7 @@ export class AuthService {
     const existing = await this.prisma.merchant.findUnique({ where: { email: dto.email } });
     if (existing) throw new BadRequestException('Email already in use');
 
-    const hash = await bcrypt.hash(dto.password, 12);
+    const hash = await hashPassword(dto.password);
 
     const merchant = await this.prisma.merchant.create({
       data: { email: dto.email, passwordHash: hash },
@@ -39,7 +42,7 @@ export class AuthService {
     const merchant = await this.prisma.merchant.findUnique({ where: { email: dto.email } });
     if (!merchant) throw new UnauthorizedException('Invalid credentials');
 
-    const ok = await bcrypt.compare(dto.password, merchant.passwordHash);
+    const ok = await comparePassword(dto.password, merchant.passwordHash);
     if (!ok) throw new UnauthorizedException('Invalid credentials');
 
     const payload = { merchant_id: merchant.id };

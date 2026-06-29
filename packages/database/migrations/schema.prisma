@@ -30,7 +30,9 @@ model Merchant {
 
   paymentIntents   PaymentIntent[]
   webhookEndpoints WebhookEndpoint[]
+  webhookEvents    WebhookEvent[]
   apiKeys          ApiKey[]
+  auditLogs        AuditLog[]
 
   @@map("merchants")
 }
@@ -42,11 +44,12 @@ model PaymentIntent {
   currency   String                @db.VarChar(3)
   status     PaymentIntentStatus   @default(PENDING)
   createdAt  DateTime              @default(now()) @map("created_at")
+  deletedAt  DateTime?             @map("deleted_at")
   updatedAt  DateTime              @updatedAt @map("updated_at")
 
   merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
 
-  @@index([merchantId])
+  @@index([merchantId, status])
   @@map("payment_intents")
 }
 
@@ -64,12 +67,31 @@ model WebhookEndpoint {
   url        String
   secret     String
   createdAt  DateTime @default(now()) @map("created_at")
+  deletedAt  DateTime? @map("deleted_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
 
-  merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  merchant      Merchant       @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  webhookEvents WebhookEvent[]
 
   @@index([merchantId])
   @@map("webhook_endpoints")
+}
+
+model WebhookEvent {
+  id                String   @id @default(uuid()) @db.Uuid
+  webhookEndpointId String   @map("webhook_endpoint_id") @db.Uuid
+  merchantId        String   @map("merchant_id") @db.Uuid
+  type              String   @map("event_type")
+  payload           Json
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  webhookEndpoint WebhookEndpoint @relation(fields: [webhookEndpointId], references: [id], onDelete: Cascade)
+  merchant        Merchant        @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@index([webhookEndpointId, createdAt])
+  @@index([merchantId])
+  @@map("webhook_events")
 }
 
 model ApiKey {
@@ -85,4 +107,21 @@ model ApiKey {
 
   @@index([merchantId])
   @@map("api_keys")
+}
+
+model AuditLog {
+  id           String   @id @default(uuid()) @db.Uuid
+  merchantId   String   @map("merchant_id") @db.Uuid
+  eventType    String   @map("event_type")
+  metadata     Json
+  ip           String
+  previousHash String?  @map("previous_hash")
+  entryHash    String   @unique @map("entry_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@index([merchantId])
+  @@map("audit_logs")
 }
