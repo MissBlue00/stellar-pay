@@ -2,6 +2,8 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { AssetReserve, RedeemResponse } from './interfaces/proof-of-reserves.interface';
 import { RedemptionRepository } from '../modules/database/redemption.repository';
 import { RedeemDto } from './dto/redeem.dto';
+import * as StellarSdk from '@stellar/stellar-sdk';
+import { Server } from '@stellar/stellar-sdk/rpc';
 
 interface MerchantBalance {
   merchantId: string;
@@ -82,15 +84,47 @@ export class TreasuryService {
       );
     }
 
-    // 2. Invoke Soroban burn function (stub)
-    // TODO: Call Soroban contract burn function when contract is deployed
-    // const sorobanClient = new SorobanClient(process.env.SOROBAN_RPC_URL);
-    // const burnTx = await sorobanClient.contractCall(
-    //   process.env.MIRROR_ASSET_CONTRACT_ID,
-    //   'burn',
-    //   [merchantId, dto.amount, dto.currency],
-    // );
-    const burnTxHash = `burn_${crypto.randomUUID().split('-').join('').slice(0, 16)}`;
+    // 2. Invoke Soroban burn function
+    const sorobanRpcUrl = process.env.SOROBAN_RPC_URL;
+    const contractId = process.env.MIRROR_ASSET_CONTRACT_ID;
+    const secret = process.env.STELLAR_STORAGE_SECRET;
+
+    if (!sorobanRpcUrl || !contractId || !secret) {
+      throw new Error(
+        'SOROBAN_RPC_URL, MIRROR_ASSET_CONTRACT_ID, and STELLAR_STORAGE_SECRET must be configured',
+      );
+    }
+
+    const rpcServer = new Server(sorobanRpcUrl, { allowHttp: true });
+    const keypair = StellarSdk.Keypair.fromSecret(secret);
+    const sourceAccount = await rpcServer.getAccount(keypair.publicKey());
+
+    const contract = new StellarSdk.Contract(contractId);
+
+    const transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
+      fee: StellarSdk.BASE_FEE,
+      networkPassphrase: StellarSdk.Networks.TESTNET,
+    })
+      .addOperation(
+        contract.call(
+          'burn',
+          new StellarSdk.Address(merchantId).toScVal(),
+          StellarSdk.nativeToScVal(dto.amount, { type: 'i128' }),
+          StellarSdk.nativeToScVal(dto.currency, { type: 'symbol' }),
+        ),
+      )
+      .setTimeout(30)
+      .build();
+
+    const preparedTx = await rpcServer.prepareTransaction(transaction);
+    preparedTx.sign(keypair);
+    const sendResult = await rpcServer.sendTransaction(preparedTx);
+
+    if (sendResult.status === 'ERROR') {
+      throw new Error('Burn transaction submission failed');
+    }
+
+    const burnTxHash = sendResult.hash;
 
     // 3. Deduct balance after successful burn
     balance.balance -= dto.amount;
