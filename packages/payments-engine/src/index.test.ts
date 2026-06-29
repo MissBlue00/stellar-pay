@@ -1,16 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockSendFunds = vi.hoisted(() => vi.fn());
+const mockCreateAssetPayment = vi.hoisted(() => vi.fn());
 
 vi.mock('./stellar.service', () => {
   return {
     StellarService: function () {
-      return { sendFunds: mockSendFunds };
+      return { sendFunds: mockSendFunds, createAssetPayment: mockCreateAssetPayment };
     },
   };
 });
 
-import { sendStellarPayment } from './index';
+import { sendStellarPayment, createAssetPayment } from './index';
 
 describe('sendStellarPayment', () => {
   beforeEach(() => {
@@ -38,5 +39,48 @@ describe('sendStellarPayment', () => {
   it('throws when sendFunds fails', async () => {
     mockSendFunds.mockRejectedValueOnce(new Error('Network error'));
     await expect(sendStellarPayment('GDEST', 10, 'XLM')).rejects.toThrow('Network error');
+  });
+});
+
+describe('createAssetPayment', () => {
+  beforeEach(() => {
+    mockCreateAssetPayment.mockReset();
+  });
+
+  const validParams = {
+    destination: 'GDESTINATION123',
+    amount: '100',
+    assetCode: 'USDC',
+    assetIssuer: 'GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5ZG34M4666Z',
+  };
+
+  it('returns a PaymentResult on success', async () => {
+    const expectedResult = {
+      transactionHash: 'abc123txhash',
+      assetCode: 'USDC',
+      assetIssuer: validParams.assetIssuer,
+      amount: '100',
+      destination: 'GDESTINATION123',
+    };
+    mockCreateAssetPayment.mockResolvedValueOnce(expectedResult);
+    const result = await createAssetPayment(validParams);
+    expect(result).toEqual(expectedResult);
+  });
+
+  it('passes the params to stellarService.createAssetPayment', async () => {
+    mockCreateAssetPayment.mockResolvedValueOnce({
+      transactionHash: 'hash',
+      assetCode: 'USDC',
+      assetIssuer: validParams.assetIssuer,
+      amount: '100',
+      destination: 'GDESTINATION123',
+    });
+    await createAssetPayment(validParams);
+    expect(mockCreateAssetPayment).toHaveBeenCalledWith(validParams);
+  });
+
+  it('throws when createAssetPayment fails', async () => {
+    mockCreateAssetPayment.mockRejectedValueOnce(new Error('Trustline not found'));
+    await expect(createAssetPayment(validParams)).rejects.toThrow('Trustline not found');
   });
 });
