@@ -2,6 +2,16 @@ import * as StellarSdk from 'stellar-sdk';
 
 export type Horizon = StellarSdk.Horizon.Server;
 
+export interface PaymentChannelConfig {
+  id: string;
+  asset: PaymentChannelAsset;
+  distributions: PaymentChannelDistribution[];
+  signers: PaymentChannelSigner[];
+  networkPassphrase: string;
+  fee?: string | number;
+  signatureThreshold?: number;
+}
+
 export type PaymentChannelStatus = 'open' | 'closing' | 'closed';
 
 export interface PaymentChannelAsset {
@@ -40,6 +50,49 @@ export interface ChannelCloseResult {
   escrowAccountId: string;
   distributions: PaymentChannelDistribution[];
   closedAt: string;
+}
+
+export async function createPaymentChannel(config: PaymentChannelConfig): Promise<PaymentChannel> {
+  const { id, asset, distributions, signers, networkPassphrase, fee, signatureThreshold } = config;
+
+  if (!id) {
+    throw new Error('Payment channel id is required');
+  }
+  if (!signers.length) {
+    throw new Error('At least one signer is required');
+  }
+  if (!distributions.length) {
+    throw new Error('At least one distribution is required');
+  }
+  for (const signer of signers) {
+    if (!StellarSdk.StrKey.isValidEd25519PublicKey(signer.publicKey)) {
+      throw new Error(`Invalid signer public key: ${signer.publicKey}`);
+    }
+  }
+  for (const distribution of distributions) {
+    if (!StellarSdk.StrKey.isValidEd25519PublicKey(distribution.publicKey)) {
+      throw new Error(`Invalid distribution address: ${distribution.publicKey}`);
+    }
+    if (!distribution.amount || Number(distribution.amount) <= 0) {
+      throw new Error(`Invalid distribution amount for ${distribution.publicKey}`);
+    }
+  }
+
+  const escrowKeypair = StellarSdk.Keypair.random();
+
+  const channel: PaymentChannel = {
+    id,
+    escrowAccountId: escrowKeypair.publicKey(),
+    status: 'open',
+    asset,
+    distributions,
+    signers,
+    networkPassphrase,
+    fee,
+    signatureThreshold,
+  };
+
+  return channel;
 }
 
 function resolveAsset(asset: PaymentChannelAsset): StellarSdk.Asset {
