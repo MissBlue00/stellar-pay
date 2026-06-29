@@ -36,6 +36,21 @@ export interface PaymentVerificationResult {
   timestamp: string;
 }
 
+export interface AssetPaymentParams {
+  destination: string;
+  amount: string;
+  assetCode: string;
+  assetIssuer: string;
+}
+
+export interface PaymentResult {
+  transactionHash: string;
+  assetCode: string;
+  assetIssuer: string;
+  amount: string;
+  destination: string;
+}
+
 type IncomingPaymentRecord =
   | StellarSdk.Horizon.ServerApi.PaymentOperationRecord
   | StellarSdk.Horizon.ServerApi.PathPaymentOperationRecord
@@ -239,5 +254,48 @@ export class StellarService {
         reject(error);
       }
     });
+  }
+
+  async createAssetPayment(params: AssetPaymentParams): Promise<PaymentResult> {
+    const { destination, amount, assetCode, assetIssuer } = params;
+
+    if (!StellarSdk.StrKey.isValidEd25519PublicKey(destination)) {
+      throw new Error(`Invalid Stellar address: ${destination}`);
+    }
+
+    const hasTrustline = await this.verifyTrustline(destination, assetCode, assetIssuer);
+    if (!hasTrustline) {
+      throw new Error(
+        `Destination account ${destination} does not have a trustline for ${assetCode}:${assetIssuer}`,
+      );
+    }
+
+    const transactionHash = await this.sendFunds(destination, amount, assetCode, assetIssuer);
+
+    return {
+      transactionHash,
+      assetCode,
+      assetIssuer,
+      amount,
+      destination,
+    };
+  }
+
+  private async verifyTrustline(
+    destination: string,
+    assetCode: string,
+    assetIssuer: string,
+  ): Promise<boolean> {
+    try {
+      const account = await this.server.loadAccount(destination);
+      return account.balances.some(
+        (b) =>
+          'asset_code' in b &&
+          (b as StellarSdk.Horizon.HorizonApi.BalanceLineAsset).asset_code === assetCode &&
+          (b as StellarSdk.Horizon.HorizonApi.BalanceLineAsset).asset_issuer === assetIssuer,
+      );
+    } catch {
+      throw new Error(`Unable to verify trustline for ${destination}`);
+    }
   }
 }

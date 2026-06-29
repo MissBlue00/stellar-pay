@@ -140,6 +140,36 @@ var StellarService = class {
       }
     });
   }
+  async createAssetPayment(params) {
+    const { destination, amount, assetCode, assetIssuer } = params;
+    if (!StellarSdk.StrKey.isValidEd25519PublicKey(destination)) {
+      throw new Error(`Invalid Stellar address: ${destination}`);
+    }
+    const hasTrustline = await this.verifyTrustline(destination, assetCode, assetIssuer);
+    if (!hasTrustline) {
+      throw new Error(
+        `Destination account ${destination} does not have a trustline for ${assetCode}:${assetIssuer}`
+      );
+    }
+    const transactionHash = await this.sendFunds(destination, amount, assetCode, assetIssuer);
+    return {
+      transactionHash,
+      assetCode,
+      assetIssuer,
+      amount,
+      destination
+    };
+  }
+  async verifyTrustline(destination, assetCode, assetIssuer) {
+    try {
+      const account = await this.server.loadAccount(destination);
+      return account.balances.some(
+        (b) => "asset_code" in b && b.asset_code === assetCode && b.asset_issuer === assetIssuer
+      );
+    } catch {
+      throw new Error(`Unable to verify trustline for ${destination}`);
+    }
+  }
 };
 
 // src/payment-channel.ts
@@ -256,10 +286,14 @@ var stellarService = new StellarService();
 async function sendStellarPayment(to, amount, asset) {
   return stellarService.sendFunds(to, amount.toString(), asset === "XLM" ? void 0 : asset);
 }
+async function createAssetPayment(params) {
+  return stellarService.createAssetPayment(params);
+}
 export {
   StellarService,
   buildChannelCloseTransaction,
   buildSignedTransaction,
   closePaymentChannel,
+  createAssetPayment,
   sendStellarPayment
 };

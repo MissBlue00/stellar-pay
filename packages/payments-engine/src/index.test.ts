@@ -1,16 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockSendFunds = vi.hoisted(() => vi.fn());
+const mockCreateAssetPayment = vi.hoisted(() => vi.fn());
 
 vi.mock('./stellar.service', () => {
   return {
     StellarService: function () {
-      return { sendFunds: mockSendFunds };
+      return { sendFunds: mockSendFunds, createAssetPayment: mockCreateAssetPayment };
     },
   };
 });
 
-import { sendStellarPayment } from './index';
+import { sendStellarPayment, createAssetPayment } from './index';
 
 describe('sendStellarPayment', () => {
   beforeEach(() => {
@@ -38,5 +39,59 @@ describe('sendStellarPayment', () => {
   it('throws when sendFunds fails', async () => {
     mockSendFunds.mockRejectedValueOnce(new Error('Network error'));
     await expect(sendStellarPayment('GDEST', 10, 'XLM')).rejects.toThrow('Network error');
+  });
+});
+
+describe('createAssetPayment', () => {
+  beforeEach(() => {
+    mockCreateAssetPayment.mockReset();
+  });
+
+  it('returns a PaymentResult on success', async () => {
+    const result = {
+      transactionHash: 'txhash123',
+      assetCode: 'USDC',
+      assetIssuer: 'GBISSUER123',
+      amount: '50',
+      destination: 'GDEST123',
+    };
+    mockCreateAssetPayment.mockResolvedValueOnce(result);
+
+    const payment = await createAssetPayment({
+      destination: 'GDEST123',
+      amount: '50',
+      assetCode: 'USDC',
+      assetIssuer: 'GBISSUER123',
+    });
+
+    expect(payment).toEqual(result);
+  });
+
+  it('passes params through to StellarService.createAssetPayment', async () => {
+    const params = {
+      destination: 'GDEST456',
+      amount: '100',
+      assetCode: 'EURT',
+      assetIssuer: 'GASSURER789',
+    };
+    mockCreateAssetPayment.mockResolvedValueOnce({
+      transactionHash: 'hash',
+      ...params,
+    });
+
+    await createAssetPayment(params);
+    expect(mockCreateAssetPayment).toHaveBeenCalledWith(params);
+  });
+
+  it('throws when createAssetPayment fails', async () => {
+    mockCreateAssetPayment.mockRejectedValueOnce(new Error('Trustline not found'));
+    await expect(
+      createAssetPayment({
+        destination: 'GDEST',
+        amount: '10',
+        assetCode: 'USDC',
+        assetIssuer: 'GISS',
+      }),
+    ).rejects.toThrow('Trustline not found');
   });
 });
