@@ -32,3 +32,4 @@ export type { FeeQuote, FeeBreakdown, TransactionType } from './interfaces/fee.i
 export type { PaymentStatusResponse } from './interfaces/payment-status.interface';
 export { configureAnchorAssets } from './configure-anchor-assets';
 export type { AnchorAsset, AnchorConfig } from './interfaces/anchor-asset.interface';
+export type { DepositParams, DepositResponse } from './interfaces/sep24.interface';

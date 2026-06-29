@@ -1,4 +1,4 @@
-import { StellarService, AssetPaymentParams, PaymentResult } from './stellar.service';
+import { StellarService, type AssetPaymentParams, type PaymentResult } from './stellar.service';
 
 const stellarService = new StellarService();
 

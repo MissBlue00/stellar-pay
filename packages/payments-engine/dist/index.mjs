@@ -38,44 +38,31 @@ var StellarService = class {
       throw error;
     }
   }
+  async checkTrustline(destination, assetCode, assetIssuer) {
+    const account = await this.server.loadAccount(destination);
+    return account.balances.some(
+      (balance) => balance.asset_code === assetCode && balance.asset_issuer === assetIssuer
+    );
+  }
   async createAssetPayment(params) {
-    const { destination, amount, assetCode, assetIssuer } = params;
+    const { destination, assetCode, assetIssuer, amount } = params;
     if (!StellarSdk.StrKey.isValidEd25519PublicKey(destination)) {
       throw new Error(`Invalid destination address: ${destination}`);
     }
-    const sourceAccount = await this.server.loadAccount(this.sourceKeypair.publicKey());
-    await this.verifyTrustline(assetCode, assetIssuer, destination);
-    const asset = new StellarSdk.Asset(assetCode, assetIssuer);
-    const transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
-      fee: StellarSdk.BASE_FEE,
-      networkPassphrase: process.env.STELLAR_NETWORK_URL?.includes("public") ? StellarSdk.Networks.PUBLIC : StellarSdk.Networks.TESTNET
-    }).addOperation(
-      StellarSdk.Operation.payment({
-        destination,
-        asset,
-        amount
-      })
-    ).setTimeout(30).build();
-    transaction.sign(this.sourceKeypair);
-    const response = await this.server.submitTransaction(transaction);
+    const hasTrustline = await this.checkTrustline(destination, assetCode, assetIssuer);
+    if (!hasTrustline) {
+      throw new Error(
+        `Destination account ${destination} does not have a trustline for ${assetCode}:${assetIssuer}`
+      );
+    }
+    const transactionHash = await this.sendFunds(destination, amount, assetCode, assetIssuer);
     return {
-      transactionHash: response.hash,
+      transactionHash,
       assetCode,
       assetIssuer,
       amount,
       destination
     };
-  }
-  async verifyTrustline(assetCode, assetIssuer, accountAddress) {
-    const accountData = await this.server.loadAccount(accountAddress);
-    const hasTrustline = accountData.balances.some(
-      (balance) => balance.asset_type !== "native" && balance.asset_code === assetCode && balance.asset_issuer === assetIssuer
-    );
-    if (!hasTrustline) {
-      throw new Error(
-        `Trustline not found for asset ${assetCode}:${assetIssuer} on account ${accountAddress}`
-      );
-    }
   }
   async verifyPayment(params) {
     const { txHash, expectedDestination, expectedAmount, expectedAssetCode, expectedAssetIssuer } = params;
