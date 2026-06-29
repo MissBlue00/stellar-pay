@@ -33,3 +33,4 @@ export type { PaymentStatusResponse } from './interfaces/payment-status.interfac
 export { configureAnchorAssets } from './configure-anchor-assets';
 export type { AnchorAsset, AnchorConfig } from './interfaces/anchor-asset.interface';
 export type { DepositParams, DepositResponse } from './interfaces/sep24.interface';
+export type { SwapParams, SwapResult, StellarAsset } from './interfaces/swap.interface';

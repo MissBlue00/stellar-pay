@@ -23,6 +23,7 @@ import type { KycStatusResponse } from './interfaces/kyc.interface';
 import type { FeeQuote, TransactionType } from './interfaces/fee.interface';
 import type { PaymentStatusResponse } from './interfaces/payment-status.interface';
 import type { DepositParams, DepositResponse } from './interfaces/sep24.interface';
+import type { SwapParams, SwapResult } from './interfaces/swap.interface';
 
 interface CustomerRecord {
   customerId: string;
@@ -66,12 +67,32 @@ interface Sep24DepositRecord {
   updatedAt: string;
 }
 
+interface SwapRecord {
+  swapId: string;
+  sourceAsset: StellarAsset;
+  destinationAsset: StellarAsset;
+  sourceAmount: string;
+  destinationAmount: string;
+  destinationAddress: string;
+  stellarTransactionHash?: string;
+  status: 'pending' | 'completed' | 'failed';
+  error?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface StellarAsset {
+  assetCode: string;
+  assetIssuer?: string;
+}
+
 export class AnchorService {
   private readonly payments = new Map<string, Sep31PaymentRecord>();
   private readonly transactions = new Map<string, AnchorTransaction>();
   private readonly customers = new Map<string, CustomerRecord>();
   private readonly accountLinks = new Map<string, string>();
   private readonly sep24Deposits = new Map<string, Sep24DepositRecord>();
+  private readonly swaps = new Map<string, SwapRecord>();
 
   // ---------------------------------------------------------------------------
   // SEP-31 Direct Payment
@@ -879,5 +900,120 @@ export class AnchorService {
     }
 
     return undefined;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Atomic Asset Swap
+  // ---------------------------------------------------------------------------
+
+  async swapAssets(params: SwapParams): Promise<SwapResult> {
+    const validation = this.validateSwapParams(params);
+    if (!validation.isValid) {
+      const errorMsg = validation.error ?? 'Invalid swap parameters';
+      return this.buildSwapError(params, errorMsg);
+    }
+
+    const swapId = `swap_${crypto.randomUUID().split('-').join('').slice(0, 16)}`;
+
+    const sourceAmount = parseFloat(params.sourceAmount);
+    const destinationAmount = (sourceAmount * 0.995).toFixed(7);
+
+    const record: SwapRecord = {
+      swapId,
+      sourceAsset: params.sourceAsset,
+      destinationAsset: params.destinationAsset,
+      sourceAmount: params.sourceAmount,
+      destinationAmount,
+      destinationAddress: params.destinationAddress,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    this.swaps.set(swapId, record);
+
+    try {
+      const txHash = `tx_${crypto.randomUUID().split('-').join('').slice(0, 16)}`;
+
+      record.stellarTransactionHash = txHash;
+      record.status = 'completed';
+      record.updatedAt = new Date().toISOString();
+      this.swaps.set(swapId, record);
+
+      return {
+        success: true,
+        swapId,
+        sourceAsset: params.sourceAsset,
+        destinationAsset: params.destinationAsset,
+        sourceAmount: params.sourceAmount,
+        destinationAmount,
+        status: 'completed',
+        stellarTransactionHash: txHash,
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt,
+      };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      record.status = 'failed';
+      record.error = errorMessage;
+      record.updatedAt = new Date().toISOString();
+      this.swaps.set(swapId, record);
+
+      return {
+        success: false,
+        swapId,
+        sourceAsset: params.sourceAsset,
+        destinationAsset: params.destinationAsset,
+        sourceAmount: params.sourceAmount,
+        destinationAmount,
+        status: 'failed',
+        error: errorMessage,
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt,
+      };
+    }
+  }
+
+  getSwap(swapId: string): SwapRecord | undefined {
+    return this.swaps.get(swapId);
+  }
+
+  getAllSwaps(): SwapRecord[] {
+    return Array.from(this.swaps.values());
+  }
+
+  private validateSwapParams(params: SwapParams): { isValid: boolean; error?: string } {
+    if (!params.sourceAsset || !params.sourceAsset.assetCode) {
+      return { isValid: false, error: 'Source asset code is required' };
+    }
+
+    if (!params.destinationAsset || !params.destinationAsset.assetCode) {
+      return { isValid: false, error: 'Destination asset code is required' };
+    }
+
+    if (!params.sourceAmount || parseFloat(params.sourceAmount) <= 0) {
+      return { isValid: false, error: 'Source amount must be a positive number' };
+    }
+
+    if (!params.destinationAddress) {
+      return { isValid: false, error: 'Destination address is required' };
+    }
+
+    return { isValid: true };
+  }
+
+  private buildSwapError(params: SwapParams, error: string): SwapResult {
+    return {
+      success: false,
+      swapId: '',
+      sourceAsset: params.sourceAsset,
+      destinationAsset: params.destinationAsset,
+      sourceAmount: params.sourceAmount,
+      destinationAmount: '0',
+      status: 'failed',
+      error,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
   }
 }
