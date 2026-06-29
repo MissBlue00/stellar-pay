@@ -1,0 +1,46 @@
+name: Auto Label Issues
+
+on:
+  issues:
+    types: [opened, reopened]
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  label:
+    name: Label issue by content
+    runs-on: ubuntu-latest
+    steps:
+      - name: Apply matching labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const text = `${issue.title ?? ''}\n${issue.body ?? ''}`.toLowerCase();
+
+            const rules = [
+              { label: 'bug', keywords: ['bug', 'error', 'fail'] },
+              { label: 'enhancement', keywords: ['add', 'implement', 'feature'] },
+              { label: 'infrastructure', keywords: ['k8s', 'deploy', 'docker'] },
+              { label: 'testing', keywords: ['test', 'spec', 'coverage'] },
+            ];
+
+            const labels = rules
+              .filter((rule) => rule.keywords.some((keyword) => text.includes(keyword)))
+              .map((rule) => rule.label);
+
+            if (labels.length === 0) {
+              core.info('No auto-label rules matched this issue.');
+              return;
+            }
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              labels,
+            });
+
+            core.info(`Applied labels: ${labels.join(', ')}`);
