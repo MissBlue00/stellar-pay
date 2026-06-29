@@ -183,6 +183,9 @@ importers:
       '@nestjs/testing':
         specifier: ^11.0.1
         version: 11.1.27(@nestjs/common@11.1.27(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.27)(@nestjs/platform-express@11.1.27)
+      '@types/bcrypt':
+        specifier: ^5.0.2
+        version: 5.0.2
       '@types/bip32':
         specifier: ^2.0.4
         version: 2.0.4
@@ -5008,6 +5011,12 @@ packages:
         integrity: sha512-5VE8jtDlFx94IyopdhtkcZ/6oCSvpLS1yOcwkUgi9/zwL9LG99q4+nYv6N/HntPGqB9wcE6osxrtmErt75sjxA==,
       }
     deprecated: This is a stub types definition. bip32 provides its own type definitions, so you do not need this installed.
+
+  '@types/bcrypt@5.0.2':
+    resolution:
+      {
+        integrity: sha512-6atioO8Y75fNcbmj0G7UjI9lXN2pQ/IGJ2FWT4a/btd0Lk9lQalHLKhkgKVZ3r+spnmWUKfbMi1GEe9wyHQfNQ==,
+      }
 
   '@types/body-parser@1.19.6':
     resolution:
@@ -16371,6 +16380,10 @@ snapshots:
   '@types/bip32@2.0.4':
     dependencies:
       bip32: 4.0.0
+
+  '@types/bcrypt@5.0.2':
+    dependencies:
+      '@types/node': 22.20.0
 
   '@types/body-parser@1.19.6':
     dependencies:
