@@ -6,6 +6,8 @@ import {
   Param,
   Post,
 } from '@nestjs/common';
+import { CurrentMerchant } from '../auth/decorators/current-merchant.decorator';
+import { type MerchantUser } from '../auth/interfaces/merchant-user.interface';
 import { TransactionNetwork } from './interfaces/transaction.interface';
 import { TransactionsService } from './transactions.service';
 
@@ -23,8 +25,11 @@ export class TransactionsController {
    * Body: { hash: string, network: "STELLAR" | "BTC" | "ETH" }
    */
   @Post()
-  register(@Body() dto: RegisterTransactionDto) {
-    return this.transactionsService.register(dto.hash, dto.network);
+  register(
+    @Body() dto: RegisterTransactionDto,
+    @CurrentMerchant() merchant: MerchantUser,
+  ) {
+    return this.transactionsService.register(dto.hash, dto.network, merchant.merchant_id);
   }
 
   /** List all tracked transactions. */

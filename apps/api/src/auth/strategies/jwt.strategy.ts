@@ -3,10 +3,11 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
 import { MerchantUser } from '../interfaces/merchant-user.interface';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
+  constructor(private readonly prisma: PrismaService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
@@ -19,10 +20,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Invalid token: merchant_id missing');
     }
 
-    // TODO: Validate merchant exists in database
-    // Example:
-    // const merchant = await this.merchantService.findById(payload.merchant_id);
-    // if (!merchant) throw new UnauthorizedException('Merchant not found');
+    const merchant = await this.prisma.merchant.findUnique({
+      where: { id: payload.merchant_id },
+      select: { id: true },
+    });
+
+    if (!merchant) {
+      throw new UnauthorizedException('Merchant not found');
+    }
 
     return { merchant_id: payload.merchant_id };
   }

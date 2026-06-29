@@ -11,64 +11,314 @@ interface MerchantBalance {
   balance: number;
 }
 
+interface HorizonAssetRecord {
+  amount?: string;
+}
+
+interface HorizonBalanceRecord {
+  asset_code?: string;
+  asset_issuer?: string;
+  balance: string;
+}
+
 @Injectable()
 export class TreasuryService {
   // In-memory merchant balances for validation (stub)
   private readonly merchantBalances: MerchantBalance[] = [];
 
+  private readonly horizonUrl =
+    process.env.STELLAR_HORIZON_URL ?? 'https://horizon-testnet.stellar.org';
+
+  private readonly issuerPublicKey = process.env.ISSUER_PUBLIC_KEY;
+
+  private get horizonServer(): StellarSdk.Horizon.Server {
+    return new StellarSdk.Horizon.Server(this.horizonUrl);
+  }
+
   constructor(private readonly redemptionRepo: RedemptionRepository) {}
 
-  async getTotalSupply(_assetCode: string): Promise<string> {
-    // TODO: Implement actual on-chain supply query using @stellar/stellar-sdk
-    // Example:
-    // const horizon = new Horizon.Server(process.env.STELLAR_HORIZON_URL);
-    // const asset = new Asset(assetCode, process.env.ISSUER_PUBLIC_KEY);
-    // const accounts = await horizon.accounts().forAsset(asset).call();
-    // return accounts.records.reduce((sum, acc) => {
-    //   const balance = acc.balances.find((b: any) => b.asset_code === assetCode);
-    //   return sum + (balance ? parseFloat(balance.balance) : 0);
-    // }, 0).toString();
-
-    return '0';
+  private getAssetIssuer(): string {
+    if (!this.issuerPublicKey) {
+      throw new BadRequestException('Missing ISSUER_PUBLIC_KEY environment variable');
+    }
+    return this.issuerPublicKey;
   }
 
-  async getTreasuryBalance(_assetCode: string, _treasuryAddress: string): Promise<string> {
-    // TODO: Implement actual treasury cold storage balance query
-    // Example:
-    // const horizon = new Horizon.Server(process.env.STELLAR_HORIZON_URL);
-    // const account = await horizon.loadAccount(treasuryAddress);
-    // const balance = account.balances.find((b: any) => b.asset_code === assetCode);
-    // return balance?.balance ?? '0';
+  async getTotalSupply(assetCode: string): Promise<string> {
+    const issuer = this.getAssetIssuer();
+    const response = await this.horizonServer.assets().forCode(assetCode).forIssuer(issuer).call();
 
-    return '0';
+    const assetRecord = response.records?.[0] as HorizonAssetRecord | undefined;
+    return assetRecord?.amount ?? '0';
   }
 
-  calculateReserveRatio(treasuryBalance: string, totalSupply: string): number {
-    const treasury = parseFloat(treasuryBalance);
-    const supply = parseFloat(totalSupply);
-
-    if (supply === 0) return 0;
-
-    return Math.round((treasury / supply) * 10000) / 100; // Return as percentage with 2 decimals
+  async getTreasuryBalance(assetCode: string, treasuryAddress: string): Promise<string> {
+    const issuer = this.getAssetIssuer();
+    const account = await this.horizonServer.loadAccount(treasuryAddress);
+    const balance = account.balances.find(
+      (b): b is HorizonBalanceRecord => b.asset_code === assetCode && b.asset_issuer === issuer,
+    );
+    return balance?.balance ?? '0';
   }
 
-  async getAssetReserve(assetCode: string): Promise<AssetReserve> {
-    // TODO: Get treasury address from config service
-    // const treasuryAddress = await this.configService.getTreasuryAddress();
-    const treasuryAddress = process.env.TREASURY_WALLET_ADDRESS ?? 'TREASURY_ADDRESS_NOT_SET';
+  /**
+   * BURN: Debits `amount` from `available_balance`.
+   *
+   * Use when:
+   *   - An on-chain withdrawal is confirmed (funds left the treasury account).
+   *   - A redemption is settled off-chain.
+   *
+   * Call RESERVE before submitting to Stellar, then SETTLE/RELEASE on result.
+   * BURN is for situations where no reservation was made (direct debit).
+   *
+   * @throws InsufficientBalanceError if available < amount.
+   * @throws InvalidAmountError if amount ≤ 0 or non-finite.
+   */
+  async burn(input: BurnInput): Promise<BalanceSnapshot> {
+    const amount = this.validateAmount(input.amount);
+    const issuer = input.asset.assetIssuer ?? 'native';
 
-    const [totalSupply, treasuryBalance] = await Promise.all([
-      this.getTotalSupply(assetCode),
-      this.getTreasuryBalance(assetCode, treasuryAddress),
-    ]);
+    this.logger.log(
+      `BURN ${amount.toFixed(7)} ${input.asset.assetCode} ref=${input.referenceId ?? 'none'}`,
+    );
 
-    const reserveRatio = this.calculateReserveRatio(treasuryBalance, totalSupply);
+    return this.runAtomicUpdate(
+      { assetCode: input.asset.assetCode, assetIssuer: issuer },
+      (current) => {
+        if (current.availableBalance.lessThan(amount)) {
+          throw new InsufficientBalanceError(
+            amount,
+            current.availableBalance,
+            input.asset.assetCode,
+          );
+        }
+        return {
+          availableBalance: current.availableBalance.sub(amount),
+          reservedBalance: current.reservedBalance,
+        };
+      },
+      LedgerEntryType.BURN,
+      amount.negated(),
+      input,
+    );
+  }
 
+  /**
+   * RESERVE: Moves `amount` from `available_balance` → `reserved_balance`.
+   *
+   * Call this BEFORE submitting a withdrawal or burn to Stellar so the
+   * funds are ear-marked and unavailable to concurrent operations.
+   *
+   * @throws InsufficientBalanceError if available < amount.
+   */
+  async reserve(input: ReserveInput): Promise<BalanceSnapshot> {
+    const amount = this.validateAmount(input.amount);
+    const issuer = input.asset.assetIssuer ?? 'native';
+
+    this.logger.log(
+      `RESERVE ${amount.toFixed(7)} ${input.asset.assetCode} ref=${input.referenceId ?? 'none'}`,
+    );
+
+    return this.runAtomicUpdate(
+      { assetCode: input.asset.assetCode, assetIssuer: issuer },
+      (current) => {
+        if (current.availableBalance.lessThan(amount)) {
+          throw new InsufficientBalanceError(
+            amount,
+            current.availableBalance,
+            input.asset.assetCode,
+          );
+        }
+        return {
+          availableBalance: current.availableBalance.sub(amount),
+          reservedBalance: current.reservedBalance.add(amount),
+        };
+      },
+      LedgerEntryType.RESERVE,
+      amount.negated(), // available decreases
+      input,
+    );
+  }
+
+  /**
+   * RELEASE: Returns `amount` from `reserved_balance` → `available_balance`.
+   *
+   * Call this when a pending operation is cancelled or fails, so the
+   * ear-marked funds become liquid again.
+   *
+   * @throws InsufficientBalanceError if reserved < amount.
+   */
+  async release(input: ReleaseInput): Promise<BalanceSnapshot> {
+    const amount = this.validateAmount(input.amount);
+    const issuer = input.asset.assetIssuer ?? 'native';
+
+    this.logger.log(
+      `RELEASE ${amount.toFixed(7)} ${input.asset.assetCode} ref=${input.referenceId ?? 'none'}`,
+    );
+
+    return this.runAtomicUpdate(
+      { assetCode: input.asset.assetCode, assetIssuer: issuer },
+      (current) => {
+        if (current.reservedBalance.lessThan(amount)) {
+          throw new InsufficientBalanceError(
+            amount,
+            current.reservedBalance,
+            input.asset.assetCode,
+          );
+        }
+        return {
+          availableBalance: current.availableBalance.add(amount),
+          reservedBalance: current.reservedBalance.sub(amount),
+        };
+      },
+      LedgerEntryType.RELEASE,
+      amount, // available increases
+      input,
+    );
+  }
+
+  /**
+   * SETTLE: Removes `amount` from `reserved_balance` (operation completed).
+   *
+   * Call this after a withdrawal transaction is confirmed on Stellar.
+   * The reserved funds are consumed — they do not return to available.
+   *
+   * @throws InsufficientBalanceError if reserved < amount.
+   */
+  async settle(input: SettleInput): Promise<BalanceSnapshot> {
+    const amount = this.validateAmount(input.amount);
+    const issuer = input.asset.assetIssuer ?? 'native';
+
+    this.logger.log(
+      `SETTLE ${amount.toFixed(7)} ${input.asset.assetCode} ref=${input.referenceId ?? 'none'}`,
+    );
+
+    return this.runAtomicUpdate(
+      { assetCode: input.asset.assetCode, assetIssuer: issuer },
+      (current) => {
+        if (current.reservedBalance.lessThan(amount)) {
+          throw new InsufficientBalanceError(
+            amount,
+            current.reservedBalance,
+            input.asset.assetCode,
+          );
+        }
+        return {
+          availableBalance: current.availableBalance,
+          reservedBalance: current.reservedBalance.sub(amount),
+        };
+      },
+      LedgerEntryType.SETTLE,
+      amount.negated(), // reserved decreases
+      input,
+    );
+  }
+
+  // ─── Core atomic update ────────────────────────────────────────────────────
+
+  /**
+   * Executes a balance mutation atomically:
+   *   1. Opens a Prisma interactive transaction with REPEATABLE READ.
+   *   2. Upserts the TreasuryBalance row (creating it at zero if absent).
+   *   3. Applies `computeNext` to derive the new column values.
+   *   4. Updates the balance row.
+   *   5. Inserts a TreasuryLedgerEntry with the post-op snapshot.
+   *   6. Returns the new snapshot.
+   *
+   * The `FOR UPDATE` advisory is provided by Prisma's interactive transaction
+   * combined with PostgreSQL's REPEATABLE READ: a second concurrent transaction
+   * touching the same row will block until the first commits.
+   */
+  private async runAtomicUpdate(
+    asset: Required<AssetIdentifier>,
+    computeNext: (current: {
+      availableBalance: Decimal;
+      reservedBalance: Decimal;
+    }) => { availableBalance: Decimal; reservedBalance: Decimal },
+    entryType: LedgerEntryType,
+    signedAmount: Decimal,
+    meta: { referenceId?: string; referenceType?: string; note?: string },
+  ): Promise<BalanceSnapshot> {
+    const result = await this.prisma.$transaction(
+      async (tx) => {
+        // Upsert balance row — creates a zero-balance entry if this is the
+        // first operation for this asset.
+        const current = await tx.treasuryBalance.upsert({
+          where: {
+            assetCode_assetIssuer: {
+              assetCode: asset.assetCode,
+              assetIssuer: asset.assetIssuer,
+            },
+          },
+          create: {
+            assetCode: asset.assetCode,
+            assetIssuer: asset.assetIssuer,
+            availableBalance: new Decimal(0),
+            reservedBalance: new Decimal(0),
+          },
+          update: {}, // no-op — we need the current row to compute the delta
+        });
+
+        // Compute next balances (may throw InsufficientBalanceError)
+        const next = computeNext({
+          availableBalance: current.availableBalance,
+          reservedBalance: current.reservedBalance,
+        });
+
+        // Apply the update
+        const updated = await tx.treasuryBalance.update({
+          where: { id: current.id },
+          data: {
+            availableBalance: next.availableBalance,
+            reservedBalance: next.reservedBalance,
+            updatedAt: new Date(),
+          },
+        });
+
+        // Write the immutable ledger entry
+        await tx.treasuryLedgerEntry.create({
+          data: {
+            balanceId: updated.id,
+            entryType,
+            amount: signedAmount,
+            availableAfter: updated.availableBalance,
+            reservedAfter: updated.reservedBalance,
+            referenceId: meta.referenceId ?? null,
+            referenceType: meta.referenceType ?? null,
+            note: meta.note ?? null,
+          },
+        });
+
+        return updated;
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
+        maxWait: 5_000,  // ms to wait for a connection
+        timeout: 10_000, // ms before the transaction times out
+      },
+    );
+
+    return this.toSnapshot(result);
+  }
+
+  // ─── Helpers ───────────────────────────────────────────────────────────────
+
+  private toSnapshot(row: {
+    id: string;
+    assetCode: string;
+    assetIssuer: string;
+    availableBalance: Decimal;
+    reservedBalance: Decimal;
+    updatedAt: Date;
+  }): BalanceSnapshot {
     return {
-      symbol: assetCode,
-      total_supply: totalSupply,
-      treasury_balance: treasuryBalance,
-      reserve_ratio: reserveRatio,
+      id: row.id,
+      assetCode: row.assetCode,
+      assetIssuer: row.assetIssuer,
+      availableBalance: row.availableBalance,
+      reservedBalance: row.reservedBalance,
+      totalBalance: row.availableBalance.add(row.reservedBalance),
+      updatedAt: row.updatedAt,
     };
   }
 
@@ -84,19 +334,18 @@ export class TreasuryService {
       );
     }
 
-    // 2. Invoke Soroban burn function
     const sorobanRpcUrl = process.env.SOROBAN_RPC_URL;
     const contractId = process.env.MIRROR_ASSET_CONTRACT_ID;
-    const secret = process.env.STELLAR_STORAGE_SECRET;
 
-    if (!sorobanRpcUrl || !contractId || !secret) {
-      throw new Error(
-        'SOROBAN_RPC_URL, MIRROR_ASSET_CONTRACT_ID, and STELLAR_STORAGE_SECRET must be configured',
+    if (!sorobanRpcUrl || !contractId) {
+      throw new BadRequestException(
+        'SOROBAN_RPC_URL and MIRROR_ASSET_CONTRACT_ID must be configured for redemption',
       );
     }
 
+    // 2. Invoke Soroban burn function
     const rpcServer = new Server(sorobanRpcUrl, { allowHttp: true });
-    const keypair = StellarSdk.Keypair.fromSecret(secret);
+    const keypair = StellarSdk.Keypair.fromSecret(process.env.STELLAR_STORAGE_SECRET!);
     const sourceAccount = await rpcServer.getAccount(keypair.publicKey());
 
     const contract = new StellarSdk.Contract(contractId);

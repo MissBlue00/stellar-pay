@@ -1,0 +1,66 @@
+// prisma/schema.prisma  — APPEND these models to the existing schema
+//
+// Do not replace the whole file; merge at the bottom after your existing
+// Payment, User, and other models.
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum LedgerEntryType {
+  MINT     // deposit credited — available_balance increases
+  BURN     // withdrawal debited — available_balance decreases
+  RESERVE  // available → reserved  (pending operation ear-mark)
+  RELEASE  // reserved → available  (ear-mark cancelled / operation failed)
+  SETTLE   // reserved → removed    (operation completed successfully)
+}
+
+// ─── TreasuryBalance ──────────────────────────────────────────────────────────
+//
+// One row per asset (asset_code + asset_issuer pair).
+// `available_balance` — liquid funds; can be used immediately.
+// `reserved_balance`  — ear-marked for pending operations (mint/burn in flight).
+//
+// Both columns are kept non-negative by a DB-level CHECK constraint
+// (see the migration SQL) AND by the TreasuryService guard clauses that
+// run inside the same Prisma transaction.
+
+model TreasuryBalance {
+  id               String   @id @default(uuid())
+  assetCode        String   @map("asset_code") @db.VarChar(12)
+  assetIssuer      String   @default("native") @map("asset_issuer") @db.VarChar(56)
+  availableBalance Decimal  @default(0) @map("available_balance") @db.Decimal(38, 7)
+  reservedBalance  Decimal  @default(0) @map("reserved_balance") @db.Decimal(38, 7)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  ledgerEntries TreasuryLedgerEntry[]
+
+  @@unique([assetCode, assetIssuer])
+  @@index([assetCode, assetIssuer])
+  @@map("treasury_balance")
+}
+
+// ─── TreasuryLedgerEntry ──────────────────────────────────────────────────────
+//
+// Immutable append-only audit log. Every balance mutation writes one row here
+// atomically (same Prisma $transaction). The `availableAfter` / `reservedAfter`
+// snapshot fields make point-in-time reconciliation O(1).
+
+model TreasuryLedgerEntry {
+  id             String           @id @default(uuid())
+  balanceId      String           @map("balance_id")
+  entryType      LedgerEntryType  @map("entry_type")
+  amount         Decimal          @db.Decimal(38, 7)
+  availableAfter Decimal          @map("available_after") @db.Decimal(38, 7)
+  reservedAfter  Decimal          @map("reserved_after") @db.Decimal(38, 7)
+  // Traceability — link back to the originating payment / withdrawal
+  referenceId    String?          @map("reference_id") @db.VarChar(255)
+  referenceType  String?          @map("reference_type") @db.VarChar(64)
+  note           String?          @db.Text
+  createdAt      DateTime         @default(now()) @map("created_at")
+
+  balance TreasuryBalance @relation(fields: [balanceId], references: [id], onDelete: Restrict)
+
+  @@index([balanceId, createdAt(sort: Desc)])
+  @@index([referenceId])
+  @@map("treasury_ledger_entry")
+}

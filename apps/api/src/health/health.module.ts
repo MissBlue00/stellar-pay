@@ -5,9 +5,10 @@ import { DatabaseHealthIndicator } from './indicators/database.health';
 import { RedisHealthIndicator } from './indicators/redis.health';
 import { BlockchainRpcHealthIndicator } from './indicators/blockchain-rpc.health';
 import { TreasuryWalletHealthIndicator } from './indicators/treasury-wallet.health';
+import { TreasuryModule } from '../treasury/treasury.module';
 
 @Module({
-  imports: [TerminusModule],
+  imports: [TerminusModule, TreasuryModule],
   controllers: [HealthController],
   providers: [
     DatabaseHealthIndicator,
