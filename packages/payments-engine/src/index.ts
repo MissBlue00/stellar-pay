@@ -1,4 +1,4 @@
-import { StellarService } from './stellar.service';
+import { StellarService, type AssetPaymentParams, type PaymentResult } from './stellar.service';
 
 const stellarService = new StellarService();
 
@@ -8,6 +8,10 @@ export async function sendStellarPayment(
   asset: string,
 ): Promise<string> {
   return stellarService.sendFunds(to, amount.toString(), asset === 'XLM' ? undefined : asset);
+}
+
+export async function createAssetPayment(params: AssetPaymentParams): Promise<PaymentResult> {
+  return stellarService.createAssetPayment(params);
 }
 export type {
   Horizon,

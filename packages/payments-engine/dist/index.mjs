@@ -38,6 +38,29 @@ var StellarService = class {
       throw error;
     }
   }
+  async checkTrustline(destination, assetCode, assetIssuer) {
+    const account = await this.server.loadAccount(destination);
+    return account.balances.some(
+      (balance) => balance.asset_code === assetCode && balance.asset_issuer === assetIssuer
+    );
+  }
+  async createAssetPayment(params) {
+    const { destination, assetCode, assetIssuer, amount } = params;
+    const hasTrustline = await this.checkTrustline(destination, assetCode, assetIssuer);
+    if (!hasTrustline) {
+      throw new Error(
+        `Destination account ${destination} does not have a trustline for ${assetCode}:${assetIssuer}`
+      );
+    }
+    const transactionHash = await this.sendFunds(destination, amount, assetCode, assetIssuer);
+    return {
+      transactionHash,
+      assetCode,
+      assetIssuer,
+      amount,
+      destination
+    };
+  }
   async verifyPayment(params) {
     const { txHash, expectedDestination, expectedAmount, expectedAssetCode, expectedAssetIssuer } = params;
     try {
@@ -246,9 +269,13 @@ var stellarService = new StellarService();
 async function sendStellarPayment(to, amount, asset) {
   return stellarService.sendFunds(to, amount.toString(), asset === "XLM" ? void 0 : asset);
 }
+async function createAssetPayment(params) {
+  return stellarService.createAssetPayment(params);
+}
 export {
   StellarService,
   buildChannelCloseTransaction,
   closePaymentChannel,
+  createAssetPayment,
   sendStellarPayment
 };

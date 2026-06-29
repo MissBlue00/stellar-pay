@@ -33,6 +33,7 @@ __export(index_exports, {
   StellarService: () => StellarService,
   buildChannelCloseTransaction: () => buildChannelCloseTransaction,
   closePaymentChannel: () => closePaymentChannel,
+  createAssetPayment: () => createAssetPayment,
   sendStellarPayment: () => sendStellarPayment
 });
 module.exports = __toCommonJS(index_exports);
@@ -76,6 +77,29 @@ var StellarService = class {
       console.error("Stellar transaction failed:", error);
       throw error;
     }
+  }
+  async checkTrustline(destination, assetCode, assetIssuer) {
+    const account = await this.server.loadAccount(destination);
+    return account.balances.some(
+      (balance) => balance.asset_code === assetCode && balance.asset_issuer === assetIssuer
+    );
+  }
+  async createAssetPayment(params) {
+    const { destination, assetCode, assetIssuer, amount } = params;
+    const hasTrustline = await this.checkTrustline(destination, assetCode, assetIssuer);
+    if (!hasTrustline) {
+      throw new Error(
+        `Destination account ${destination} does not have a trustline for ${assetCode}:${assetIssuer}`
+      );
+    }
+    const transactionHash = await this.sendFunds(destination, amount, assetCode, assetIssuer);
+    return {
+      transactionHash,
+      assetCode,
+      assetIssuer,
+      amount,
+      destination
+    };
   }
   async verifyPayment(params) {
     const { txHash, expectedDestination, expectedAmount, expectedAssetCode, expectedAssetIssuer } = params;
@@ -285,10 +309,14 @@ var stellarService = new StellarService();
 async function sendStellarPayment(to, amount, asset) {
   return stellarService.sendFunds(to, amount.toString(), asset === "XLM" ? void 0 : asset);
 }
+async function createAssetPayment(params) {
+  return stellarService.createAssetPayment(params);
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   StellarService,
   buildChannelCloseTransaction,
   closePaymentChannel,
+  createAssetPayment,
   sendStellarPayment
 });
