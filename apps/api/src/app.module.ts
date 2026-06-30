@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_FILTER } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -15,6 +15,7 @@ import { TransactionsModule } from './transactions/transactions.module';
 import { WorkerModule } from './modules/worker/worker.module';
 import { WebhookModule } from './webhooks/webhook.module';
 import { PaymentsModule } from './payments/payments.module';
+import { PrismaClientExceptionFilter } from './prisma/prisma-exception.filter';
 
 @Module({
   imports: [
@@ -46,6 +47,10 @@ import { PaymentsModule } from './payments/payments.module';
     {
       provide: APP_GUARD,
       useClass: ThrottlerRedisGuard,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: PrismaClientExceptionFilter,
     },
   ],
 })

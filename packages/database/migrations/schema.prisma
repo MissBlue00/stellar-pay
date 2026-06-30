@@ -13,6 +13,13 @@ enum KycStatus {
   REJECTED
 }
 
+enum CustomerStatus {
+  NEEDS_INFO
+  PROCESSING
+  APPROVED
+  REJECTED
+}
+
 enum PaymentIntentStatus {
   PENDING
   DETECTED
@@ -33,8 +40,35 @@ model Merchant {
   webhookEvents    WebhookEvent[]
   apiKeys          ApiKey[]
   auditLogs        AuditLog[]
+  customers        Customer[]
 
   @@map("merchants")
+}
+
+model Customer {
+  id                 String         @id @default(uuid()) @db.Uuid
+  merchantId         String         @map("merchant_id") @db.Uuid
+  firstName          String?        @map("first_name")
+  lastName           String?        @map("last_name")
+  email              String?
+  phoneNumber        String?        @map("phone_number")
+  countryCode        String?        @map("country_code")
+  bankAccountNumber  String?        @map("bank_account_number")
+  bankRoutingNumber  String?        @map("bank_routing_number")
+  dateOfBirth        String?        @map("date_of_birth")
+  streetAddress      String?        @map("street_address")
+  city               String?
+  region             String?
+  postalCode         String?        @map("postal_code")
+  status             CustomerStatus @default(NEEDS_INFO)
+  createdAt          DateTime       @default(now()) @map("created_at")
+  deletedAt          DateTime?      @map("deleted_at")
+  updatedAt          DateTime       @updatedAt @map("updated_at")
+
+  merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@index([merchantId, status])
+  @@map("customers")
 }
 
 model PaymentIntent {
