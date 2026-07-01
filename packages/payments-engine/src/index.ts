@@ -34,6 +34,21 @@ export async function createAssetPayment(params: AssetPaymentParams): Promise<Pa
 }
 
 export type {
+  PaymentMemoType,
+  PaymentAssetInput,
+  PaymentMemoInput,
+  SourceAccountInput,
+  BuildTransactionParamsInput,
+  BuiltTransactionParams,
+} from './build-transaction-params';
+
+export {
+  buildTransactionParams,
+  buildTransactionFromParams,
+  encodePaymentMemo,
+} from './build-transaction-params';
+
+export type {
   Horizon,
   PaymentChannelStatus,
   PaymentChannelAsset,

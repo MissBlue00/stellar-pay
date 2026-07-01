@@ -34,9 +34,14 @@ __export(index_exports, {
   StellarService: () => StellarService,
   buildChannelCloseTransaction: () => buildChannelCloseTransaction,
   buildSignedTransaction: () => buildSignedTransaction,
+  buildTransactionFromParams: () => buildTransactionFromParams,
+  buildTransactionParams: () => buildTransactionParams,
   closePaymentChannel: () => closePaymentChannel,
   createAssetPayment: () => createAssetPayment,
   createPaymentChannel: () => createPaymentChannel,
+  encodePaymentMemo: () => encodePaymentMemo,
+  parsePaymentMemo: () => parsePaymentMemo,
+  parsePaymentMemoFromTransaction: () => parsePaymentMemoFromTransaction,
   sendStellarPayment: () => sendStellarPayment
 });
 module.exports = __toCommonJS(index_exports);
@@ -44,6 +49,88 @@ var import_stellar_sdk = require("stellar-sdk");
 
 // src/stellar.service.ts
 var StellarSdk = __toESM(require("stellar-sdk"));
+function parsePaymentMemo(memo) {
+  if (!memo) {
+    return {
+      type: "none",
+      value: null,
+      valid: true
+    };
+  }
+  try {
+    let type;
+    let value = null;
+    let valid = true;
+    switch (memo.type) {
+      case StellarSdk.MemoText:
+        type = "text";
+        value = memo.value;
+        break;
+      case StellarSdk.MemoID:
+        type = "id";
+        value = memo.value.toString();
+        break;
+      case StellarSdk.MemoHash:
+      case StellarSdk.MemoReturn:
+        type = memo.type === StellarSdk.MemoHash ? "hash" : "return";
+        value = memo.value.toString("hex");
+        break;
+      case StellarSdk.MemoNone:
+        type = "none";
+        value = null;
+        break;
+      default:
+        type = "none";
+        value = null;
+        valid = false;
+    }
+    return {
+      type,
+      value,
+      valid
+    };
+  } catch {
+    return {
+      type: "none",
+      value: null,
+      valid: false
+    };
+  }
+}
+function parsePaymentMemoFromTransaction(transaction) {
+  try {
+    if ("memo" in transaction) {
+      if (transaction.memo instanceof StellarSdk.Memo) {
+        return parsePaymentMemo(transaction.memo);
+      }
+      if (typeof transaction.memo === "string") {
+        return {
+          type: "text",
+          value: transaction.memo,
+          valid: true
+        };
+      }
+      if (transaction.memo === null || transaction.memo === void 0) {
+        return {
+          type: "none",
+          value: null,
+          valid: true
+        };
+      }
+    }
+    return {
+      type: "none",
+      value: null,
+      valid: false
+    };
+  } catch {
+    return {
+      type: "none",
+      value: null,
+      valid: false
+    };
+  }
+}
 var StellarService = class {
   server;
   sourceKeypair;
@@ -229,44 +316,20 @@ async function sendStellarPayment(to, amount, asset) {
 0 && (module.exports = {
   createTransactionBuilder,
 // src/payment-channel.ts
+// src/build-transaction-params.ts
 var StellarSdk2 = __toESM(require("stellar-sdk"));
-async function createPaymentChannel(config) {
-  const { id, asset, distributions, signers, networkPassphrase, fee, signatureThreshold } = config;
-  if (!id) {
-    throw new Error("Payment channel id is required");
+function normalizeSourceAccount(account) {
+  if (account instanceof StellarSdk2.Account) {
+    return account;
   }
-  if (!signers.length) {
-    throw new Error("At least one signer is required");
+  return new StellarSdk2.Account(account.account_id, account.sequence);
+}
+function normalizeFee(fee) {
+  const feeValue = typeof fee === "number" ? fee : Number(fee);
+  if (!Number.isFinite(feeValue) || feeValue <= 0) {
+    throw new Error(`Invalid fee: ${String(fee)}`);
   }
-  if (!distributions.length) {
-    throw new Error("At least one distribution is required");
-  }
-  for (const signer of signers) {
-    if (!StellarSdk2.StrKey.isValidEd25519PublicKey(signer.publicKey)) {
-      throw new Error(`Invalid signer public key: ${signer.publicKey}`);
-    }
-  }
-  for (const distribution of distributions) {
-    if (!StellarSdk2.StrKey.isValidEd25519PublicKey(distribution.publicKey)) {
-      throw new Error(`Invalid distribution address: ${distribution.publicKey}`);
-    }
-    if (!distribution.amount || Number(distribution.amount) <= 0) {
-      throw new Error(`Invalid distribution amount for ${distribution.publicKey}`);
-    }
-  }
-  const escrowKeypair = StellarSdk2.Keypair.random();
-  const channel = {
-    id,
-    escrowAccountId: escrowKeypair.publicKey(),
-    status: "open",
-    asset,
-    distributions,
-    signers,
-    networkPassphrase,
-    fee,
-    signatureThreshold
-  };
-  return channel;
+  return String(Math.trunc(feeValue));
 }
 function resolveAsset(asset) {
   const code = asset.code?.trim();
@@ -282,8 +345,152 @@ function resolveAsset(asset) {
   }
   return new StellarSdk2.Asset(code, asset.issuer);
 }
-function normalizeFee(fee) {
-  const feeValue = fee === void 0 ? Number(StellarSdk2.BASE_FEE) : Number(fee);
+function toMemoBuffer(value) {
+  if (Buffer.isBuffer(value)) {
+    if (value.length !== 32) {
+      throw new Error(`Memo hash/return must be 32 bytes, got ${value.length}`);
+    }
+    return value;
+  }
+  if (typeof value === "string") {
+    const hex = value.startsWith("0x") ? value.slice(2) : value;
+    if (!/^[0-9a-fA-F]{64}$/.test(hex)) {
+      throw new Error("Memo hash/return must be a 64-character hex string or 32-byte Buffer");
+    }
+    return Buffer.from(hex, "hex");
+  }
+  throw new Error("Memo hash/return value must be a hex string or Buffer");
+}
+function encodePaymentMemo(memo) {
+  switch (memo.type) {
+    case "none":
+      return StellarSdk2.Memo.none();
+    case "text": {
+      if (typeof memo.value !== "string" || memo.value.length === 0) {
+        throw new Error("Text memo requires a non-empty string value");
+      }
+      if (Buffer.byteLength(memo.value, "utf8") > 28) {
+        throw new Error("Text memo must be at most 28 bytes");
+      }
+      return StellarSdk2.Memo.text(memo.value);
+    }
+    case "id": {
+      if (memo.value === void 0 || memo.value === null || memo.value === "") {
+        throw new Error("ID memo requires a numeric value");
+      }
+      const id = typeof memo.value === "number" ? memo.value : Number(memo.value);
+      if (!Number.isInteger(id) || id < 0) {
+        throw new Error(`Invalid ID memo value: ${String(memo.value)}`);
+      }
+      return StellarSdk2.Memo.id(String(id));
+    }
+    case "hash":
+      return StellarSdk2.Memo.hash(toMemoBuffer(memo.value));
+    case "return":
+      return StellarSdk2.Memo.return(toMemoBuffer(memo.value).toString("hex"));
+    default:
+      throw new Error(`Unsupported memo type: ${String(memo.type)}`);
+  }
+}
+function buildTransactionParams(input) {
+  const { destination, amount, asset, memo, fee, networkPassphrase, timeout = 30 } = input;
+  if (!StellarSdk2.StrKey.isValidEd25519PublicKey(destination)) {
+    throw new Error(`Invalid destination address: ${destination}`);
+  }
+  if (!amount || Number(amount) <= 0) {
+    throw new Error(`Invalid payment amount: ${amount}`);
+  }
+  const sourceAccount = normalizeSourceAccount(input.sourceAccount);
+  const resolvedAsset = resolveAsset(asset);
+  const normalizedFee = normalizeFee(fee);
+  const resolvedNetworkPassphrase = networkPassphrase ?? StellarSdk2.Networks.TESTNET;
+  const operation = StellarSdk2.Operation.payment({
+    destination,
+    asset: resolvedAsset,
+    amount
+  });
+  const built = {
+    sourceAccount,
+    destination,
+    amount,
+    asset: resolvedAsset,
+    fee: normalizedFee,
+    networkPassphrase: resolvedNetworkPassphrase,
+    timeout,
+    operation
+  };
+  if (memo && memo.type !== "none") {
+    built.memo = encodePaymentMemo(memo);
+  }
+  return built;
+}
+function buildTransactionFromParams(params) {
+  let builder = new StellarSdk2.TransactionBuilder(params.sourceAccount, {
+    fee: params.fee,
+    networkPassphrase: params.networkPassphrase
+  }).addOperation(params.operation);
+  if (params.memo) {
+    builder = builder.addMemo(params.memo);
+  }
+  return builder.setTimeout(params.timeout).build();
+}
+
+// src/payment-channel.ts
+var StellarSdk3 = __toESM(require("stellar-sdk"));
+async function createPaymentChannel(config) {
+  const { id, asset, distributions, signers, networkPassphrase, fee, signatureThreshold } = config;
+  if (!id) {
+    throw new Error("Payment channel id is required");
+  }
+  if (!signers.length) {
+    throw new Error("At least one signer is required");
+  }
+  if (!distributions.length) {
+    throw new Error("At least one distribution is required");
+  }
+  for (const signer of signers) {
+    if (!StellarSdk3.StrKey.isValidEd25519PublicKey(signer.publicKey)) {
+      throw new Error(`Invalid signer public key: ${signer.publicKey}`);
+    }
+  }
+  for (const distribution of distributions) {
+    if (!StellarSdk3.StrKey.isValidEd25519PublicKey(distribution.publicKey)) {
+      throw new Error(`Invalid distribution address: ${distribution.publicKey}`);
+    }
+    if (!distribution.amount || Number(distribution.amount) <= 0) {
+      throw new Error(`Invalid distribution amount for ${distribution.publicKey}`);
+    }
+  }
+  const escrowKeypair = StellarSdk3.Keypair.random();
+  const channel = {
+    id,
+    escrowAccountId: escrowKeypair.publicKey(),
+    status: "open",
+    asset,
+    distributions,
+    signers,
+    networkPassphrase,
+    fee,
+    signatureThreshold
+  };
+  return channel;
+}
+function resolveAsset2(asset) {
+  const code = asset.code?.trim();
+  const isNative = !code || code === "native" || code === "XLM";
+  if (isNative) {
+    if (asset.issuer) {
+      throw new Error("Native asset cannot include an issuer");
+    }
+    return StellarSdk3.Asset.native();
+  }
+  if (!asset.issuer) {
+    throw new Error(`Issuer is required for asset ${code}`);
+  }
+  return new StellarSdk3.Asset(code, asset.issuer);
+}
+function normalizeFee2(fee) {
+  const feeValue = fee === void 0 ? Number(StellarSdk3.BASE_FEE) : Number(fee);
   if (!Number.isFinite(feeValue) || feeValue <= 0) {
     throw new Error(`Invalid fee: ${String(fee)}`);
   }
@@ -300,7 +507,7 @@ function assertChannelReadyToClose(channel) {
     throw new Error("Payment channel close requires at least one signer");
   }
   for (const distribution of channel.distributions) {
-    if (!StellarSdk2.StrKey.isValidEd25519PublicKey(distribution.publicKey)) {
+    if (!StellarSdk3.StrKey.isValidEd25519PublicKey(distribution.publicKey)) {
       throw new Error(`Invalid distribution address: ${distribution.publicKey}`);
     }
     if (!distribution.amount || Number(distribution.amount) <= 0) {
@@ -328,16 +535,16 @@ function collectSignerKeypairs(channel) {
 }
 function buildChannelCloseTransaction(channel, sourceAccount) {
   assertChannelReadyToClose(channel);
-  const account = sourceAccount instanceof StellarSdk2.Account ? sourceAccount : new StellarSdk2.Account(sourceAccount.account_id, sourceAccount.sequence);
-  const asset = resolveAsset(channel.asset);
-  const fee = normalizeFee(channel.fee);
-  let builder = new StellarSdk2.TransactionBuilder(account, {
+  const account = sourceAccount instanceof StellarSdk3.Account ? sourceAccount : new StellarSdk3.Account(sourceAccount.account_id, sourceAccount.sequence);
+  const asset = resolveAsset2(channel.asset);
+  const fee = normalizeFee2(channel.fee);
+  let builder = new StellarSdk3.TransactionBuilder(account, {
     fee,
     networkPassphrase: channel.networkPassphrase
   });
   for (const distribution of channel.distributions) {
     builder = builder.addOperation(
-      StellarSdk2.Operation.payment({
+      StellarSdk3.Operation.payment({
         destination: distribution.publicKey,
         asset,
         amount: distribution.amount
@@ -388,8 +595,13 @@ async function createAssetPayment(params) {
   StellarService,
   buildChannelCloseTransaction,
   buildSignedTransaction,
+  buildTransactionFromParams,
+  buildTransactionParams,
   closePaymentChannel,
   createAssetPayment,
   createPaymentChannel,
+  encodePaymentMemo,
+  parsePaymentMemo,
+  parsePaymentMemoFromTransaction,
   sendStellarPayment
 });
