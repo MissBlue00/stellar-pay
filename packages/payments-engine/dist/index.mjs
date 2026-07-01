@@ -1,3 +1,6 @@
+// src/index.ts
+import { TransactionBuilder as TransactionBuilder2, BASE_FEE as BASE_FEE2 } from "stellar-sdk";
+
 // src/stellar.service.ts
 import * as StellarSdk from "stellar-sdk";
 function parsePaymentMemo(memo) {
@@ -250,6 +253,22 @@ var StellarService = class {
   }
 };
 
+// src/index.ts
+var stellarService = new StellarService();
+function createTransactionBuilder(source, server) {
+  const networkPassphrase = server.networkPassphrase || "";
+  return new TransactionBuilder2(source, {
+    fee: BASE_FEE2,
+    // FIX: Use the imported root BASE_FEE constant directly
+    networkPassphrase
+  });
+}
+async function sendStellarPayment(to, amount, asset) {
+  return stellarService.sendFunds(to, amount.toString(), asset === "XLM" ? void 0 : asset);
+}
+export {
+  createTransactionBuilder,
+// src/payment-channel.ts
 // src/build-transaction-params.ts
 import * as StellarSdk2 from "stellar-sdk";
 function normalizeSourceAccount(account) {

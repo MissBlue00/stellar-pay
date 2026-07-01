@@ -30,6 +30,7 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 // src/index.ts
 var index_exports = {};
 __export(index_exports, {
+  createTransactionBuilder: () => createTransactionBuilder,
   StellarService: () => StellarService,
   buildChannelCloseTransaction: () => buildChannelCloseTransaction,
   buildSignedTransaction: () => buildSignedTransaction,
@@ -44,6 +45,7 @@ __export(index_exports, {
   sendStellarPayment: () => sendStellarPayment
 });
 module.exports = __toCommonJS(index_exports);
+var import_stellar_sdk = require("stellar-sdk");
 
 // src/stellar.service.ts
 var StellarSdk = __toESM(require("stellar-sdk"));
@@ -297,6 +299,23 @@ var StellarService = class {
   }
 };
 
+// src/index.ts
+var stellarService = new StellarService();
+function createTransactionBuilder(source, server) {
+  const networkPassphrase = server.networkPassphrase || "";
+  return new import_stellar_sdk.TransactionBuilder(source, {
+    fee: import_stellar_sdk.BASE_FEE,
+    // FIX: Use the imported root BASE_FEE constant directly
+    networkPassphrase
+  });
+}
+async function sendStellarPayment(to, amount, asset) {
+  return stellarService.sendFunds(to, amount.toString(), asset === "XLM" ? void 0 : asset);
+}
+// Annotate the CommonJS export names for ESM import in node:
+0 && (module.exports = {
+  createTransactionBuilder,
+// src/payment-channel.ts
 // src/build-transaction-params.ts
 var StellarSdk2 = __toESM(require("stellar-sdk"));
 function normalizeSourceAccount(account) {
