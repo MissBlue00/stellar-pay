@@ -25,16 +25,19 @@ export function parsePaymentMemo(memo: StellarSdk.Memo | null | undefined): Pars
     switch (memo.type) {
       case StellarSdk.MemoText:
         type = 'text';
-        value = memo.value;
+        value =
+          typeof memo.value === 'string'
+            ? memo.value
+            : ((memo.value as unknown as Buffer | null)?.toString() ?? null);
         break;
       case StellarSdk.MemoID:
         type = 'id';
-        value = memo.value.toString();
+        value = memo.value != null ? memo.value.toString() : null;
         break;
       case StellarSdk.MemoHash:
       case StellarSdk.MemoReturn:
         type = memo.type === StellarSdk.MemoHash ? 'hash' : 'return';
-        value = memo.value.toString('hex');
+        value = memo.value != null ? (memo.value as unknown as Buffer).toString('hex') : null;
         break;
       case StellarSdk.MemoNone:
         type = 'none';
@@ -97,8 +100,6 @@ export function parsePaymentMemoFromTransaction(
   }
 }
 
-
-
 export interface ReceivePaymentParams {
   address: string;
   timeoutMs?: number;
@@ -148,6 +149,52 @@ export interface PaymentVerificationResult {
   source: string;
   memo?: string | null;
   timestamp: string;
+}
+
+export type BuildTxMemoType = 'none' | 'text' | 'id' | 'hash' | 'return';
+
+export interface BuildTxMemo {
+  type: BuildTxMemoType;
+  /**
+   * Memo payload:
+   * - `text`: string (max 28 bytes)
+   * - `id`: string or number (uint64)
+   * - `hash` / `return`: 32-byte Buffer or 64-char hex string
+   */
+  value?: string | number | Buffer;
+}
+
+export interface BuildTxAsset {
+  /** Asset code, e.g. `USDC`. Omit or use `native` / `XLM` for lumens. */
+  code?: string;
+  /** Issuer public key. Required for non-native assets. */
+  issuer?: string;
+}
+
+/**
+ * Parameters for {@link StellarService.buildSignedTransaction}.
+ *
+ * The source account sequence number is loaded from Horizon automatically —
+ * only the public key is required here.
+ */
+export interface BuildTxParams {
+  /** Public key of the source account. */
+  sourcePublicKey: string;
+  /** Destination public key. */
+  destination: string;
+  /** Payment amount as a decimal string, e.g. `"10.5"`. */
+  amount: string;
+  /** Asset to send. Defaults to native XLM when omitted. */
+  asset?: BuildTxAsset;
+  /** Optional transaction memo. */
+  memo?: BuildTxMemo;
+  /**
+   * Base fee in stroops. Defaults to {@link StellarSdk.BASE_FEE}.
+   * Must be a positive integer string or number.
+   */
+  fee?: string | number;
+  /** Secret key used to sign the transaction. */
+  secretKey: string;
 }
 
 type IncomingPaymentRecord =
@@ -390,5 +437,150 @@ export class StellarService {
         reject(error);
       }
     });
+  }
+
+  /**
+   * Builds and signs a Stellar payment transaction in one step.
+   *
+   * Loads the source account sequence number from Horizon, constructs a
+   * payment operation, applies an optional memo, signs the transaction with
+   * the provided secret key, and returns the signed {@link StellarSdk.Transaction}.
+   *
+   * @param params - {@link BuildTxParams}
+   * @returns Signed transaction ready for submission via `server.submitTransaction`.
+   */
+  async buildSignedTransaction(params: BuildTxParams): Promise<StellarSdk.Transaction> {
+    const {
+      sourcePublicKey,
+      destination,
+      amount,
+      asset: assetInput,
+      memo: memoInput,
+      fee,
+      secretKey,
+    } = params;
+
+    // Validate addresses
+    if (!StellarSdk.StrKey.isValidEd25519PublicKey(sourcePublicKey)) {
+      throw new Error(`Invalid source public key: ${sourcePublicKey}`);
+    }
+    if (!StellarSdk.StrKey.isValidEd25519PublicKey(destination)) {
+      throw new Error(`Invalid destination address: ${destination}`);
+    }
+
+    // Validate amount
+    const numericAmount = Number(amount);
+    if (!amount || !Number.isFinite(numericAmount) || numericAmount <= 0) {
+      throw new Error(`Invalid payment amount: ${String(amount)}`);
+    }
+
+    // Resolve asset
+    const code = assetInput?.code?.trim();
+    const isNative = !code || code === 'native' || code === 'XLM';
+    let resolvedAsset: StellarSdk.Asset;
+    if (isNative) {
+      if (assetInput?.issuer) {
+        throw new Error('Native asset cannot include an issuer');
+      }
+      resolvedAsset = StellarSdk.Asset.native();
+    } else {
+      if (!assetInput?.issuer) {
+        throw new Error(`Issuer is required for asset ${code}`);
+      }
+      resolvedAsset = new StellarSdk.Asset(code, assetInput.issuer);
+    }
+
+    // Resolve fee
+    const feeValue = fee !== undefined ? Number(fee) : Number(StellarSdk.BASE_FEE);
+    if (!Number.isFinite(feeValue) || feeValue <= 0) {
+      throw new Error(`Invalid fee: ${String(fee)}`);
+    }
+    const resolvedFee = String(Math.trunc(feeValue));
+
+    // Determine network passphrase
+    const networkPassphrase = process.env.STELLAR_NETWORK_URL?.includes('public')
+      ? StellarSdk.Networks.PUBLIC
+      : StellarSdk.Networks.TESTNET;
+
+    // Load source account sequence number from Horizon
+    const sourceAccount = await this.server.loadAccount(sourcePublicKey);
+
+    // Build transaction
+    let builder = new StellarSdk.TransactionBuilder(sourceAccount, {
+      fee: resolvedFee,
+      networkPassphrase,
+    }).addOperation(
+      StellarSdk.Operation.payment({
+        destination,
+        asset: resolvedAsset,
+        amount,
+      }),
+    );
+
+    // Apply optional memo
+    if (memoInput && memoInput.type !== 'none') {
+      let memo: StellarSdk.Memo;
+      switch (memoInput.type) {
+        case 'text': {
+          if (typeof memoInput.value !== 'string' || memoInput.value.length === 0) {
+            throw new Error('Text memo requires a non-empty string value');
+          }
+          if (Buffer.byteLength(memoInput.value, 'utf8') > 28) {
+            throw new Error('Text memo must be at most 28 bytes');
+          }
+          memo = StellarSdk.Memo.text(memoInput.value);
+          break;
+        }
+        case 'id': {
+          if (memoInput.value === undefined || memoInput.value === null || memoInput.value === '') {
+            throw new Error('ID memo requires a numeric value');
+          }
+          const id =
+            typeof memoInput.value === 'number' ? memoInput.value : Number(memoInput.value);
+          if (!Number.isInteger(id) || id < 0) {
+            throw new Error(`Invalid ID memo value: ${String(memoInput.value)}`);
+          }
+          memo = StellarSdk.Memo.id(String(id));
+          break;
+        }
+        case 'hash':
+        case 'return': {
+          const rawValue = memoInput.value as string | Buffer;
+          let buf: Buffer;
+          if (Buffer.isBuffer(rawValue)) {
+            if (rawValue.length !== 32) {
+              throw new Error(`Memo hash/return must be 32 bytes, got ${rawValue.length}`);
+            }
+            buf = rawValue;
+          } else if (typeof rawValue === 'string') {
+            const hex = rawValue.startsWith('0x') ? rawValue.slice(2) : rawValue;
+            if (!/^[0-9a-fA-F]{64}$/.test(hex)) {
+              throw new Error(
+                'Memo hash/return must be a 64-character hex string or 32-byte Buffer',
+              );
+            }
+            buf = Buffer.from(hex, 'hex');
+          } else {
+            throw new Error('Memo hash/return value must be a hex string or Buffer');
+          }
+          memo =
+            memoInput.type === 'hash'
+              ? StellarSdk.Memo.hash(buf)
+              : StellarSdk.Memo.return(buf.toString('hex'));
+          break;
+        }
+        default:
+          throw new Error(`Unsupported memo type: ${String((memoInput as BuildTxMemo).type)}`);
+      }
+      builder = builder.addMemo(memo);
+    }
+
+    const transaction = builder.setTimeout(30).build();
+
+    // Sign with provided secret key
+    const keypair = StellarSdk.Keypair.fromSecret(secretKey);
+    transaction.sign(keypair);
+
+    return transaction;
   }
 }
