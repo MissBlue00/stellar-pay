@@ -94,6 +94,36 @@ export class PaymentsService {
     return this.updateStatus(id, 'failed', WebhookEventType.PAYMENT_FAILED);
   }
 
+  findAll(
+    merchantId: string,
+    opts: { page: number; limit: number; status?: string; search?: string },
+  ): { data: StoredIntent[]; total: number; page: number; limit: number } {
+    let results = this.payments.filter((p) => p.merchantId === merchantId);
+
+    if (opts.status) {
+      results = results.filter((p) => p.status === opts.status);
+    }
+
+    if (opts.search) {
+      const q = opts.search.toLowerCase();
+      results = results.filter(
+        (p) =>
+          p.paymentId.toLowerCase().includes(q) ||
+          p.paymentReference.toLowerCase().includes(q) ||
+          p.currency.toLowerCase().includes(q) ||
+          (p.reference && p.reference.toLowerCase().includes(q)),
+      );
+    }
+
+    results.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    const total = results.length;
+    const start = (opts.page - 1) * opts.limit;
+    const data = results.slice(start, start + opts.limit);
+
+    return { data, total, page: opts.page, limit: opts.limit };
+  }
+
   findOne(paymentId: string): StoredIntent | undefined {
     return this.payments.find((p) => p.paymentId === paymentId);
   }
