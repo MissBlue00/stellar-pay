@@ -142,6 +142,14 @@ export interface PaymentResult {
   destination: string;
 }
 
+export interface SubmitResult {
+  hash: string;
+  successful: boolean;
+  ledger: number | null;
+  envelopeXdr: string;
+  error?: string;
+}
+
 export interface PaymentVerificationResult {
   verified: boolean;
   amount: string;
@@ -323,12 +331,65 @@ export class StellarService {
 
       transaction.sign(this.sourceKeypair);
 
-      const response = await this.server.submitTransaction(transaction);
-      return response.hash;
+      const result = await this.submitTransaction(transaction);
+      if (!result.successful) {
+        throw new Error(result.error ?? 'Stellar transaction failed');
+      }
+      return result.hash;
     } catch (error) {
       console.error('Stellar transaction failed:', error);
       throw error; // Rethrow to let the worker handle the failure state
     }
+  }
+
+  async submitTransaction(transaction: StellarSdk.Transaction): Promise<SubmitResult> {
+    const envelopeXdr = transaction.toEnvelope().toXDR('base64');
+
+    const submitOnce = async (): Promise<SubmitResult> => {
+      try {
+        const response = await this.server.submitTransaction(transaction);
+        return {
+          hash: response.hash,
+          successful: response.successful,
+          ledger: response.ledger ?? null,
+          envelopeXdr: response.envelope_xdr || envelopeXdr,
+        };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        return {
+          hash: this.getTransactionHash(transaction),
+          successful: false,
+          ledger: null,
+          envelopeXdr,
+          error: message,
+        };
+      }
+    };
+
+    const firstResult = await submitOnce();
+    if (!firstResult.successful && firstResult.error && this.isTimeoutError(firstResult.error)) {
+      return await submitOnce();
+    }
+
+    return firstResult;
+  }
+
+  private getTransactionHash(transaction: StellarSdk.Transaction): string {
+    try {
+      const hashBuffer = transaction.hash();
+      return hashBuffer.toString('hex');
+    } catch {
+      return '';
+    }
+  }
+
+  private isTimeoutError(error: unknown): boolean {
+    if (!error) {
+      return false;
+    }
+
+    const message = typeof error === 'string' ? error : error instanceof Error ? error.message : '';
+    return /timeout/i.test(message) || (error as any)?.name === 'TimeoutError' || (error as any)?.code === 'ETIMEDOUT';
   }
 
   async checkTrustline(
