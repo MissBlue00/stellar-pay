@@ -23,12 +23,13 @@ import { Decimal } from '@prisma/client/runtime/library';
 import { mockDeep, DeepMockProxy } from 'jest-mock-extended';
 
 import { PrismaService } from '../prisma/prisma.service';
+import { RedemptionRepository } from '../modules/database/redemption.repository';
 import { TreasuryService } from './treasury.service';
 import {
   InsufficientBalanceError,
   InvalidAmountError,
   LedgerEntryType,
-} from '@stellar-pay/payments-engine/treasury';
+} from '@stellar-pay/payments-engine';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -40,13 +41,13 @@ function makeBalanceRow(
   overrides: Partial<{ id: string; assetCode: string; assetIssuer: string }> = {},
 ) {
   return {
-    id:               overrides.id        ?? 'bal-uuid-001',
-    assetCode:        overrides.assetCode ?? USDC.assetCode,
-    assetIssuer:      overrides.assetIssuer ?? USDC.assetIssuer,
+    id: overrides.id ?? 'bal-uuid-001',
+    assetCode: overrides.assetCode ?? USDC.assetCode,
+    assetIssuer: overrides.assetIssuer ?? USDC.assetIssuer,
     availableBalance: new Decimal(availableBalance),
-    reservedBalance:  new Decimal(reservedBalance),
-    createdAt:        new Date('2024-01-01'),
-    updatedAt:        new Date('2024-01-01'),
+    reservedBalance: new Decimal(reservedBalance),
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01'),
   };
 }
 
@@ -54,7 +55,7 @@ function makeBalanceRow(
 
 describe('TreasuryService', () => {
   let service: TreasuryService;
-  let prisma:  DeepMockProxy<PrismaService>;
+  let prisma: DeepMockProxy<PrismaService>;
 
   beforeEach(async () => {
     prisma = mockDeep<PrismaService>();
@@ -63,6 +64,7 @@ describe('TreasuryService', () => {
       providers: [
         TreasuryService,
         { provide: PrismaService, useValue: prisma },
+        { provide: RedemptionRepository, useValue: mockDeep<RedemptionRepository>() },
       ],
     }).compile();
 
@@ -95,8 +97,8 @@ describe('TreasuryService', () => {
 
   describe('mint', () => {
     it('credits available balance and writes a MINT ledger entry', async () => {
-      const before  = makeBalanceRow('500', '0');
-      const after   = makeBalanceRow('600', '0');
+      const before = makeBalanceRow('500', '0');
+      const after = makeBalanceRow('600', '0');
 
       setupTransactionMock(prisma, before, after);
 
@@ -125,7 +127,7 @@ describe('TreasuryService', () => {
   describe('burn', () => {
     it('debits available balance and writes a BURN ledger entry', async () => {
       const before = makeBalanceRow('500', '0');
-      const after  = makeBalanceRow('400', '0');
+      const after = makeBalanceRow('400', '0');
 
       setupTransactionMock(prisma, before, after);
 
@@ -149,7 +151,7 @@ describe('TreasuryService', () => {
   describe('reserve', () => {
     it('moves amount from available to reserved', async () => {
       const before = makeBalanceRow('500', '0');
-      const after  = makeBalanceRow('400', '100');
+      const after = makeBalanceRow('400', '100');
 
       setupTransactionMock(prisma, before, after);
 
@@ -174,7 +176,7 @@ describe('TreasuryService', () => {
   describe('release', () => {
     it('returns reserved amount back to available', async () => {
       const before = makeBalanceRow('0', '100');
-      const after  = makeBalanceRow('100', '0');
+      const after = makeBalanceRow('100', '0');
 
       setupTransactionMock(prisma, before, after);
 
@@ -199,7 +201,7 @@ describe('TreasuryService', () => {
   describe('settle', () => {
     it('removes amount from reserved (consumed on settlement)', async () => {
       const before = makeBalanceRow('0', '100');
-      const after  = makeBalanceRow('0', '0');
+      const after = makeBalanceRow('0', '0');
 
       setupTransactionMock(prisma, before, after);
 
@@ -251,7 +253,7 @@ function setupTransactionMock(
   afterRow: ReturnType<typeof makeBalanceRow>,
 ) {
   (prisma.$transaction as jest.Mock).mockImplementation(
-    async (fn: (tx: unknown) => Promise<unknown>, opts: unknown) => {
+    async (fn: (tx: unknown) => Promise<unknown>, _opts: unknown) => {
       const tx = {
         treasuryBalance: {
           upsert: jest.fn().mockResolvedValue(beforeRow),
@@ -268,8 +270,8 @@ function setupTransactionMock(
 
 function expectLedgerEntryCreated(
   prisma: DeepMockProxy<PrismaService>,
-  expectedType: LedgerEntryType,
-  expectedAmount: Decimal,
+  _expectedType: LedgerEntryType,
+  _expectedAmount: Decimal,
 ) {
   const txCall = (prisma.$transaction as jest.Mock).mock.calls[0];
   expect(txCall).toBeDefined();

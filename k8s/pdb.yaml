@@ -1,0 +1,12 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: stellarpay-api-pdb
+  namespace: stellar-pay
+  labels:
+    app: stellarpay-api
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: stellarpay-api
