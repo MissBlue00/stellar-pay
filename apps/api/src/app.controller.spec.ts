@@ -18,5 +18,17 @@ describe('AppController', () => {
     it('should return "Hello World!"', () => {
       expect(appController.getHello()).toBe('Hello World!');
     });
+
+    it('should return service health info', () => {
+      const healthInfo = appController.getHealthInfo();
+
+      expect(healthInfo).toMatchObject({
+        status: 'ok',
+        version: expect.any(String),
+        uptime: expect.any(Number),
+        timestamp: expect.any(String),
+        environment: expect.any(String),
+      });
+    });
   });
 });
