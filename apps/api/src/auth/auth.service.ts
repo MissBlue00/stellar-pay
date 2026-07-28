@@ -7,6 +7,8 @@ import { hashPassword, comparePassword } from './password.utils';
 
 @Injectable()
 export class AuthService {
+  private readonly blacklistedTokens = new Set<string>();
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
@@ -51,5 +53,30 @@ export class AuthService {
     const expires_in = this.parseExpiresInToSeconds(expiresInEnv);
 
     return { access_token, expires_in };
+  }
+
+  logout(authorizationHeader: string | undefined): void {
+    const token = this.extractBearerToken(authorizationHeader);
+    if (!token) {
+      throw new UnauthorizedException('No token provided');
+    }
+
+    this.blacklistedTokens.add(token);
+  }
+
+  isTokenBlacklisted(authorizationHeader: string | undefined): boolean {
+    const token = this.extractBearerToken(authorizationHeader);
+    return !!token && this.blacklistedTokens.has(token);
+  }
+
+  private extractBearerToken(authorizationHeader: string | undefined): string | undefined {
+    if (!authorizationHeader) return undefined;
+
+    const normalized = authorizationHeader.trim();
+    if (normalized.toLowerCase().startsWith('bearer ')) {
+      return normalized.slice(7).trim();
+    }
+
+    return normalized;
   }
 }

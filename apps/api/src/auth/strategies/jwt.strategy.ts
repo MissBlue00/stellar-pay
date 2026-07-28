@@ -1,21 +1,32 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import type { Request } from 'express';
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
 import { MerchantUser } from '../interfaces/merchant-user.interface';
 import { PrismaService } from '../../prisma/prisma.service';
+import { AuthService } from '../auth.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly authService: AuthService,
+  ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
       secretOrKey: process.env.JWT_SECRET ?? 'default-secret-change-me',
+      passReqToCallback: true,
     });
   }
 
-  async validate(payload: JwtPayload): Promise<MerchantUser> {
+  async validate(req: Request, payload: JwtPayload): Promise<MerchantUser> {
+    const authorizationHeader = req.headers.authorization;
+    if (this.authService.isTokenBlacklisted(authorizationHeader)) {
+      throw new UnauthorizedException('Token has been revoked');
+    }
+
     if (!payload.merchant_id) {
       throw new UnauthorizedException('Invalid token: merchant_id missing');
     }
