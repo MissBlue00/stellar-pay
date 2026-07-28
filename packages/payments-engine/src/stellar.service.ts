@@ -202,6 +202,65 @@ type IncomingPaymentRecord =
   | StellarSdk.Horizon.ServerApi.PathPaymentOperationRecord
   | StellarSdk.Horizon.ServerApi.PathPaymentStrictSendOperationRecord;
 
+export interface AmountValidationResult {
+  valid: boolean;
+  error?: string;
+}
+
+const ASSET_MINIMUM_AMOUNTS: Record<string, number> = {
+  XLM: 0.00001,
+  NATIVE: 0.00001,
+  USDC: 0.00001,
+  EURC: 0.00001,
+};
+
+export function validateAmount(
+  amount: string,
+  assetCode?: string,
+): AmountValidationResult {
+  if (typeof amount !== 'string' || amount.trim() === '') {
+    return { valid: false, error: 'Amount must be a non-empty string' };
+  }
+
+  const trimmed = amount.trim();
+
+  if (!/^\d+(\.\d+)?$/.test(trimmed)) {
+    return { valid: false, error: 'Invalid amount format' };
+  }
+
+  const num = parseFloat(trimmed);
+
+  if (isNaN(num) || !isFinite(num)) {
+    return { valid: false, error: 'Invalid amount format' };
+  }
+
+  if (num <= 0) {
+    return { valid: false, error: 'Amount must be a positive number' };
+  }
+
+  if (trimmed.includes('.')) {
+    const decimals = trimmed.split('.')[1];
+    if (decimals && decimals.length > 7) {
+      return {
+        valid: false,
+        error: 'Amount exceeds maximum Stellar decimal precision (7 decimal places)',
+      };
+    }
+  }
+
+  const code = (assetCode || 'XLM').toUpperCase();
+  const minAmount = ASSET_MINIMUM_AMOUNTS[code] ?? 0.00001;
+
+  if (num < minAmount) {
+    return {
+      valid: false,
+      error: `Amount is below the minimum required amount of ${minAmount} for ${code}`,
+    };
+  }
+
+  return { valid: true };
+}
+
 export class StellarService {
   private server: StellarSdk.Horizon.Server;
   private sourceKeypair!: StellarSdk.Keypair;
@@ -221,6 +280,13 @@ export class StellarService {
     } catch {
       console.warn('Invalid STELLAR_STORAGE_SECRET. Stellar operations will fail.');
     }
+  }
+
+  /**
+   * Validates a Stellar payment amount.
+   */
+  validateAmount(amount: string, assetCode?: string): AmountValidationResult {
+    return validateAmount(amount, assetCode);
   }
 
   /**
