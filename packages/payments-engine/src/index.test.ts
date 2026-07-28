@@ -11,7 +11,7 @@ vi.mock('./stellar.service', () => {
   };
 });
 
-import { sendStellarPayment, createAssetPayment } from './index';
+import { sendStellarPayment, createAssetPayment, generatePaymentId } from './index';
 
 describe('sendStellarPayment', () => {
   beforeEach(() => {
@@ -39,6 +39,29 @@ describe('sendStellarPayment', () => {
   it('throws when sendFunds fails', async () => {
     mockSendFunds.mockRejectedValueOnce(new Error('Network error'));
     await expect(sendStellarPayment('GDEST', 10, 'XLM')).rejects.toThrow('Network error');
+  });
+});
+
+describe('generatePaymentId', () => {
+  it('generates IDs with the default pay prefix', () => {
+    const id = generatePaymentId();
+
+    expect(id).toMatch(/^pay_[a-z0-9]+$/);
+    expect(id.length).toBeGreaterThan(5);
+  });
+
+  it('uses a custom prefix when provided', () => {
+    const id = generatePaymentId('invoice');
+
+    expect(id).toMatch(/^invoice_[a-z0-9]+$/);
+    expect(id.startsWith('invoice_')).toBe(true);
+  });
+
+  it('generates distinct IDs across calls', () => {
+    const first = generatePaymentId();
+    const second = generatePaymentId();
+
+    expect(first).not.toBe(second);
   });
 });
 
