@@ -27,6 +27,11 @@ enum PaymentIntentStatus {
   FAILED
 }
 
+enum TreasuryWalletType {
+  HOT
+  COLD
+}
+
 model Merchant {
   id           String    @id @default(uuid()) @db.Uuid
   email        String    @unique
@@ -88,11 +93,23 @@ model PaymentIntent {
 }
 
 model TreasuryAsset {
-  symbol       String @id @db.VarChar(10)
-  totalMinted  Decimal @default(0) @map("total_minted") @db.Decimal(36, 2)
+  symbol        String @id @db.VarChar(10)
+  totalMinted   Decimal @default(0) @map("total_minted") @db.Decimal(36, 2)
   totalReserved Decimal @default(0) @map("total_reserved") @db.Decimal(36, 2)
 
   @@map("treasury_assets")
+}
+
+model TreasuryWallet {
+  id          String              @id @default(uuid()) @db.Uuid
+  assetCode   String              @map("asset_code") @db.VarChar(10)
+  address     String
+  walletType  TreasuryWalletType @default(HOT) @map("wallet_type")
+  label       String?
+  createdAt   DateTime            @default(now()) @map("created_at")
+  updatedAt   DateTime            @updatedAt @map("updated_at")
+
+  @@map("treasury_wallets")
 }
 
 model WebhookEndpoint {
