@@ -1,8 +1,8 @@
 'use client';
 
-import { motion } from "motion/react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { motion } from 'motion/react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   CreditCard,
@@ -17,29 +17,43 @@ import {
   Menu,
   X,
   ChevronRight,
-} from "lucide-react";
-import { useState } from "react";
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 
 const navigation = [
-  { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Payments", href: "/dashboard/payments", icon: CreditCard },
-  { name: "Treasury", href: "/dashboard/treasury", icon: Vault },
-  { name: "Token Whitelist", href: "/dashboard/tokens", icon: Coins },
-  { name: "Subscriptions", href: "/dashboard/subscriptions", icon: RefreshCw },
-  { name: "Escrow", href: "/dashboard/escrow", icon: Lock },
-  { name: "Webhooks", href: "/dashboard/webhooks", icon: Webhook },
-  { name: "Compliance", href: "/dashboard/compliance", icon: ShieldCheck },
-  { name: "API Keys", href: "/dashboard/api-keys", icon: Key },
-  { name: "Audit Logs", href: "/dashboard/audit-logs", icon: FileText },
+  { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Payments', href: '/dashboard/payments', icon: CreditCard },
+  { name: 'Treasury', href: '/dashboard/treasury', icon: Vault },
+  { name: 'Token Whitelist', href: '/dashboard/tokens', icon: Coins },
+  { name: 'Subscriptions', href: '/dashboard/subscriptions', icon: RefreshCw },
+  { name: 'Escrow', href: '/dashboard/escrow', icon: Lock },
+  { name: 'Webhooks', href: '/dashboard/webhooks', icon: Webhook },
+  { name: 'Compliance', href: '/dashboard/compliance', icon: ShieldCheck },
+  { name: 'API Keys', href: '/dashboard/api-keys', icon: Key },
+  { name: 'Audit Logs', href: '/dashboard/audit-logs', icon: FileText },
 ];
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { isAuthenticated, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      router.replace('/login');
+    }
+  }, [isAuthenticated, loading, router]);
+
+  if (loading) {
+    return null;
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -59,7 +73,7 @@ export default function DashboardLayout({
       {/* Sidebar */}
       <motion.aside
         className={`fixed top-0 left-0 bottom-0 w-64 bg-black border-r border-white/5 flex flex-col z-40 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } lg:translate-x-0 transition-transform duration-300`}
         initial={{ x: -256 }}
         animate={{ x: 0 }}
@@ -67,7 +81,10 @@ export default function DashboardLayout({
       >
         {/* Logo */}
         <div className="h-16 flex items-center px-6 border-b border-white/5">
-          <Link href="/" className="font-medium text-lg hover:text-neutral-400 transition-colors cursor-pointer">
+          <Link
+            href="/"
+            className="font-medium text-lg hover:text-neutral-400 transition-colors cursor-pointer"
+          >
             StellarPay Rails
           </Link>
         </div>
@@ -87,8 +104,8 @@ export default function DashboardLayout({
                   <motion.div
                     className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all ${
                       isActive
-                        ? "bg-white/10 text-white"
-                        : "text-neutral-400 hover:text-white hover:bg-white/5"
+                        ? 'bg-white/10 text-white'
+                        : 'text-neutral-400 hover:text-white hover:bg-white/5'
                     }`}
                     whileHover={{ x: 4 }}
                     whileTap={{ scale: 0.98 }}
@@ -96,10 +113,7 @@ export default function DashboardLayout({
                     <item.icon className="size-5 flex-shrink-0" />
                     <span className="text-sm font-medium">{item.name}</span>
                     {isActive && (
-                      <motion.div
-                        layoutId="activeIndicator"
-                        className="ml-auto"
-                      >
+                      <motion.div layoutId="activeIndicator" className="ml-auto">
                         <ChevronRight className="size-4" />
                       </motion.div>
                     )}
@@ -113,17 +127,19 @@ export default function DashboardLayout({
         {/* Footer */}
         <div className="p-4 border-t border-white/5">
           <div className="text-xs text-neutral-500">
-            <div className="mb-1">API Status: <span className="text-green-400">Operational</span></div>
-            <div>Environment: <span className="text-yellow-400">Development</span></div>
+            <div className="mb-1">
+              API Status: <span className="text-green-400">Operational</span>
+            </div>
+            <div>
+              Environment: <span className="text-yellow-400">Development</span>
+            </div>
           </div>
         </div>
       </motion.aside>
 
       {/* Main content */}
       <div className="lg:pl-64 pt-16 lg:pt-0">
-        <main className="min-h-screen">
-          {children}
-        </main>
+        <main className="min-h-screen">{children}</main>
       </div>
 
       {/* Mobile overlay */}
