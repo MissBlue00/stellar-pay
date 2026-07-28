@@ -7,13 +7,15 @@ import {
   NotFoundException,
   Param,
   Post,
+  Query,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { CurrentMerchant } from '../auth/decorators/current-merchant.decorator.js';
 import { type MerchantUser } from '../auth/interfaces/merchant-user.interface.js';
 import { CreatePaymentIntentDto } from './dto/create-payment-intent.dto.js';
 import { GenerateDepositAddressDto } from './dto/generate-deposit-address.dto.js';
+import { ListPaymentsDto } from './dto/list-payments.dto.js';
 import { PaymentsService, type CreatePaymentIntentResponse } from './payments.service.js';
 import { DepositAddressService } from './deposit-address.service.js';
 import { DepositAddress } from './interfaces/deposit-address.interface.js';
@@ -88,14 +90,31 @@ export class PaymentsController {
     return this.depositAddressService.generateAddress(paymentId, dto.network);
   }
 
+  @Get()
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'List payment intents for the authenticated merchant' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: ['pending', 'detected', 'confirmed', 'failed'],
+  })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  listPayments(@CurrentMerchant() merchant: MerchantUser, @Query() query: ListPaymentsDto) {
+    return this.paymentsService.findAll(merchant.merchant_id, {
+      page: query.page ?? 1,
+      limit: query.limit ?? 20,
+      status: query.status,
+      search: query.search,
+    });
+  }
+
   @Get(':paymentId')
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get a payment intent' })
   @ApiResponse({ status: 404, description: 'Payment intent not found' })
-  getPayment(
-    @Param('paymentId') paymentId: string,
-    @CurrentMerchant() merchant: MerchantUser,
-  ) {
+  getPayment(@Param('paymentId') paymentId: string, @CurrentMerchant() merchant: MerchantUser) {
     const intent = this.paymentsService.findOneOrFail(paymentId);
     if (intent.merchantId !== merchant.merchant_id) {
       throw new NotFoundException('Payment intent not found');
