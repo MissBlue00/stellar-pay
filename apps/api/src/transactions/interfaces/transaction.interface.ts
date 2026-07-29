@@ -11,6 +11,8 @@ export enum TransactionStatus {
   FAILED = 'failed',
 }
 
+export type TransactionType = 'deposit' | 'withdrawal';
+
 export const CONFIRMATION_THRESHOLDS: Record<TransactionNetwork, number> = {
   [TransactionNetwork.STELLAR]: 1,
   [TransactionNetwork.BTC]: 3,
@@ -26,4 +28,5 @@ export interface Transaction {
   required_confirmations: number;
   created_at: string;
   confirmed_at?: string;
+  type?: TransactionType;
 }
