@@ -65,7 +65,7 @@ impl PaymentIntentContract {
         storage.set(&counter_key, &(next_id + 1));
 
         env.events().publish(
-            (symbol_short!("payment_intent"), intent_id.clone()),
+            (symbol_short!("p_intent"), intent_id.clone()),
             (from, to, amount),
         );
 
@@ -97,13 +97,16 @@ impl PaymentIntentContract {
         let token_client = TokenClient::new(&env, &intent.token);
         token_client.transfer(&intent.sender, &intent.recipient, &intent.amount);
 
+        let sender = intent.sender.clone();
+        let recipient = intent.recipient.clone();
+        let amount = intent.amount;
         intent.status = PaymentIntentStatus::COMPLETED;
         intents.set(intent_id.clone(), intent);
         storage.set(&intents_key, &intents);
 
         env.events().publish(
             (symbol_short!("capture"), intent_id.clone()),
-            (intent.sender, intent.recipient, intent.amount),
+            (sender, recipient, amount),
         );
     }
 }
