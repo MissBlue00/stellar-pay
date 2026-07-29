@@ -26,6 +26,10 @@ export class ApiKeysController {
       },
     },
   })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Not found' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
   async createApiKey(@CurrentMerchant() merchant: MerchantUser): Promise<CreateApiKeyResponse> {
     return this.apiKeysService.generateKey(merchant.merchant_id);
   }

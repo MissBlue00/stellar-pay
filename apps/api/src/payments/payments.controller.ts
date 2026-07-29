@@ -48,6 +48,10 @@ export class PaymentsController {
       },
     },
   })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Not found' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
   createPaymentIntent(
     @Body() dto: CreatePaymentIntentDto,
     @CurrentMerchant() merchant: MerchantUser,
@@ -76,7 +80,10 @@ export class PaymentsController {
       },
     },
   })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Payment intent not found' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
   async generateDepositAddress(
     @Param('paymentId') paymentId: string,
     @Body() dto: GenerateDepositAddressDto,
@@ -101,6 +108,11 @@ export class PaymentsController {
     enum: ['pending', 'detected', 'confirmed', 'failed'],
   })
   @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiResponse({ status: 200, description: 'Payment intents retrieved successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Not found' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
   listPayments(@CurrentMerchant() merchant: MerchantUser, @Query() query: ListPaymentsDto) {
     return this.paymentsService.findAll(merchant.merchant_id, {
       page: query.page ?? 1,
@@ -113,7 +125,11 @@ export class PaymentsController {
   @Get(':paymentId')
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get a payment intent' })
+  @ApiResponse({ status: 200, description: 'Payment intent retrieved successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Payment intent not found' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
   getPayment(@Param('paymentId') paymentId: string, @CurrentMerchant() merchant: MerchantUser) {
     const intent = this.paymentsService.findOneOrFail(paymentId);
     if (intent.merchantId !== merchant.merchant_id) {
@@ -125,7 +141,11 @@ export class PaymentsController {
   @Get(':paymentId/deposit-addresses')
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'List deposit addresses for a payment intent' })
+  @ApiResponse({ status: 200, description: 'Deposit addresses retrieved successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Payment intent not found' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
   getDepositAddresses(
     @Param('paymentId') paymentId: string,
     @CurrentMerchant() merchant: MerchantUser,
