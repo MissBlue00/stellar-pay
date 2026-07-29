@@ -98,10 +98,39 @@ describe('TransactionsController', () => {
   // ─── GET /transactions ────────────────────────────────────────────────────
 
   describe('findAll', () => {
+    it('passes merchant and filter query params to the service', () => {
+      svc.findAll.mockReturnValue([]);
+
+      controller.findAll(merchant(), {
+        page: 2,
+        limit: 10,
+        type: 'withdrawal',
+        status: TransactionStatus.CONFIRMED,
+        from: '2025-01-01',
+        to: '2025-12-31',
+      } satisfies {
+        page: number;
+        limit: number;
+        type: string;
+        status: TransactionStatus;
+        from: string;
+        to: string;
+      });
+
+      expect(svc.findAll).toHaveBeenCalledWith(MERCHANT_ID, {
+        page: 2,
+        limit: 10,
+        type: 'withdrawal',
+        status: TransactionStatus.CONFIRMED,
+        from: '2025-01-01',
+        to: '2025-12-31',
+      });
+    });
+
     it('returns empty array when no transactions exist', () => {
       svc.findAll.mockReturnValue([]);
 
-      const result = controller.findAll();
+      const result = controller.findAll(merchant());
 
       expect(svc.findAll).toHaveBeenCalled();
       expect(result).toEqual([]);
@@ -115,7 +144,7 @@ describe('TransactionsController', () => {
       ];
       svc.findAll.mockReturnValue(transactions);
 
-      const result = controller.findAll();
+      const result = controller.findAll(merchant());
 
       expect(svc.findAll).toHaveBeenCalled();
       expect(result).toEqual(transactions);
@@ -130,7 +159,7 @@ describe('TransactionsController', () => {
       ];
       svc.findAll.mockReturnValue(transactions);
 
-      const result = controller.findAll();
+      const result = controller.findAll(merchant());
 
       expect(result.map((tx) => tx.network)).toEqual([
         TransactionNetwork.STELLAR,
@@ -148,7 +177,7 @@ describe('TransactionsController', () => {
       ];
       svc.findAll.mockReturnValue(transactions);
 
-      const result = controller.findAll();
+      const result = controller.findAll(merchant());
 
       expect(result.map((tx) => tx.status)).toEqual([
         TransactionStatus.PENDING,
