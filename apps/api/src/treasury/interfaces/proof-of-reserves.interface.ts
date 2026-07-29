@@ -11,6 +11,13 @@ export interface ProofOfReservesResponse {
   reserves: AssetReserve[];
 }
 
+export interface TreasuryBalanceResponse {
+  total_treasury_value: number;
+  total_reserve_backing: number;
+  active_assets: number;
+  assets: AssetReserve[];
+}
+
 export interface RedeemResponse {
   redemption_id: string;
   amount: number;

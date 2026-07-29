@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import * as StellarSdk from '@stellar/stellar-sdk';
-import { RedeemResponse } from './interfaces/proof-of-reserves.interface';
+import { AssetReserve, RedeemResponse } from './interfaces/proof-of-reserves.interface';
 import { RedemptionRepository } from '../modules/database/redemption.repository';
 import { RedeemDto } from './dto/redeem.dto';
 
@@ -58,6 +58,25 @@ export class TreasuryService {
       (b): b is HorizonBalanceRecord => b.asset_code === assetCode && b.asset_issuer === issuer,
     );
     return balance?.balance ?? '0';
+  }
+
+  async getAssetReserve(assetCode: string): Promise<AssetReserve> {
+    const treasuryAddress =
+      process.env.TREASURY_WALLET_ADDRESS ??
+      'GAKMS4ZQ5G5XK4Q5G5XK4Q5G5XK4Q5G5XK4Q5G5XK4Q5G5XK4Q5G5XK4Q5';
+    const [totalSupply, treasuryBalance] = await Promise.all([
+      this.getTotalSupply(assetCode),
+      this.getTreasuryBalance(assetCode, treasuryAddress),
+    ]);
+    const supply = parseFloat(totalSupply) || 1;
+    const balance = parseFloat(treasuryBalance) || 0;
+    const reserveRatio = parseFloat(((balance / supply) * 100).toFixed(2));
+    return {
+      symbol: assetCode,
+      total_supply: totalSupply,
+      treasury_balance: treasuryBalance,
+      reserve_ratio: reserveRatio,
+    };
   }
 
   /**
