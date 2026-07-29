@@ -10,7 +10,9 @@ import {
   AlertCircle,
   Clock,
   Inbox,
+  CreditCard,
 } from 'lucide-react';
+import { EmptyState } from '@/components/EmptyState';
 import { useEffect, useState, useCallback } from 'react';
 import { Skeleton } from '@/app/components/ui/skeleton';
 import {
@@ -223,16 +225,20 @@ export default function PaymentsPage() {
                   </tr>
                 ))
               ) : payments.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="py-16 text-center">
-                    <div className="flex flex-col items-center gap-3 text-neutral-500">
-                      <Inbox className="size-10" />
-                      <span className="text-sm">
-                        {searchQuery ? 'No payments match your search.' : 'No payments found.'}
-                      </span>
-                    </div>
-                  </td>
-                </tr>
+                <EmptyState
+                  icon={searchQuery ? Search : CreditCard}
+                  title={searchQuery ? 'No results found' : 'No payments yet'}
+                  description={
+                    searchQuery
+                      ? 'Try adjusting your search or filters to find what you\'re looking for.'
+                      : 'Payments will appear here once customers complete a transaction. Your first payment can be initiated from the checkout page.'
+                  }
+                  action={
+                    searchQuery
+                      ? undefined
+                      : { label: 'View Checkout', onClick: () => window.location.href = '/checkout' }
+                  }
+                />
               ) : (
                 payments.map((payment, index) => (
                   <motion.tr

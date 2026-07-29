@@ -1,9 +1,11 @@
 'use client';
 
 import { motion } from "motion/react";
-import { Filter, Download, Activity } from "lucide-react";
+import { Filter, Download, Activity, ScrollText } from "lucide-react";
+import { useState } from "react";
+import { EmptyState } from "@/components/EmptyState";
 
-const auditLogs = [
+const initialAuditLogs = [
   { timestamp: "2026-03-03 14:32:15", action: "API Key Created", actor: "admin@acmecorp.com", ip: "192.168.1.100", details: "Created sk_live_***", status: "success" },
   { timestamp: "2026-03-03 14:28:42", action: "Payment Initiated", actor: "api-service", ip: "10.0.1.50", details: "pay_9k2j3n4k5j6h", status: "success" },
   { timestamp: "2026-03-03 14:24:08", action: "Webhook Updated", actor: "admin@acmecorp.com", ip: "192.168.1.100", details: "wh_1a2b3c", status: "success" },
@@ -15,6 +17,38 @@ const auditLogs = [
 ];
 
 export default function AuditLogsPage() {
+  const [auditLogs] = useState(initialAuditLogs);
+  const logRows = auditLogs.length === 0 ? (
+    <EmptyState
+      icon={ScrollText}
+      title="No audit logs yet"
+      description="Audit logs track every action taken in your dashboard. They will appear here once activity is recorded."
+    />
+  ) : auditLogs.map((log, index) => (
+    <motion.tr
+      key={index}
+      className="border-b border-white/5 hover:bg-white/[0.02] transition-colors"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.4 + index * 0.03 }}
+    >
+      <td className="py-4 px-4 text-neutral-400 whitespace-nowrap">{log.timestamp}</td>
+      <td className="py-4 px-4 font-medium">{log.action}</td>
+      <td className="py-4 px-4 font-mono text-xs text-neutral-400">{log.actor}</td>
+      <td className="py-4 px-4 font-mono text-xs text-neutral-400">{log.ip}</td>
+      <td className="py-4 px-4 text-neutral-400 text-xs">{log.details}</td>
+      <td className="py-4 px-4">
+        <span
+          className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${
+            log.status === "success" ? "bg-green-400/10 text-green-400" : "bg-red-400/10 text-red-400"
+          }`}
+        >
+          <Activity className="size-3" />
+          {log.status}
+        </span>
+      </td>
+    </motion.tr>
+  ));
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="mb-8">
@@ -97,31 +131,7 @@ export default function AuditLogsPage() {
               </tr>
             </thead>
             <tbody>
-              {auditLogs.map((log, index) => (
-                <motion.tr
-                  key={index}
-                  className="border-b border-white/5 hover:bg-white/[0.02] transition-colors"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 + index * 0.03 }}
-                >
-                  <td className="py-4 px-4 text-neutral-400 whitespace-nowrap">{log.timestamp}</td>
-                  <td className="py-4 px-4 font-medium">{log.action}</td>
-                  <td className="py-4 px-4 font-mono text-xs text-neutral-400">{log.actor}</td>
-                  <td className="py-4 px-4 font-mono text-xs text-neutral-400">{log.ip}</td>
-                  <td className="py-4 px-4 text-neutral-400 text-xs">{log.details}</td>
-                  <td className="py-4 px-4">
-                    <span
-                      className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${
-                        log.status === "success" ? "bg-green-400/10 text-green-400" : "bg-red-400/10 text-red-400"
-                      }`}
-                    >
-                      <Activity className="size-3" />
-                      {log.status}
-                    </span>
-                  </td>
-                </motion.tr>
-              ))}
+              {logRows}
             </tbody>
           </table>
         </div>

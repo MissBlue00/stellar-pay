@@ -1,9 +1,11 @@
 'use client';
 
 import { motion } from "motion/react";
-import { Plus, ToggleLeft, ToggleRight, Settings } from "lucide-react";
+import { Plus, ToggleLeft, ToggleRight, Settings, Coins } from "lucide-react";
+import { useState } from "react";
+import { EmptyState } from "@/components/EmptyState";
 
-const tokens = [
+const initialTokens = [
   { symbol: "USDC", enabled: true, autoConvert: true, minAmount: "10.00", maxAmount: "100,000.00" },
   { symbol: "BTC", enabled: true, autoConvert: false, minAmount: "0.001", maxAmount: "10.00" },
   { symbol: "ETH", enabled: true, autoConvert: true, minAmount: "0.01", maxAmount: "100.00" },
@@ -11,6 +13,60 @@ const tokens = [
 ];
 
 export default function TokenWhitelistPage() {
+  const [tokens] = useState(initialTokens);
+  const tokenRows = tokens.length === 0 ? (
+    <EmptyState
+      icon={Coins}
+      title="No tokens configured"
+      description="Token whitelist controls which assets are accepted for payments. Add a token to start accepting it."
+      action={{ label: 'Add Token', onClick: () => {} }}
+    />
+  ) : tokens.map((token, index) => (
+    <motion.tr
+      key={token.symbol}
+      className="border-b border-white/5 hover:bg-white/[0.02] transition-colors"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.3 + index * 0.05 }}
+    >
+      <td className="py-4 px-4">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-white/20 to-white/10 flex items-center justify-center font-medium text-xs">
+            {token.symbol.slice(0, 2)}
+          </div>
+          <span className="font-medium">{token.symbol}</span>
+        </div>
+      </td>
+      <td className="py-4 px-4">
+        <button className="flex items-center gap-2 cursor-pointer">
+          {token.enabled ? (
+            <ToggleRight className="size-6 text-green-400" />
+          ) : (
+            <ToggleLeft className="size-6 text-neutral-500" />
+          )}
+          <span className={token.enabled ? "text-green-400" : "text-neutral-500"}>
+            {token.enabled ? "Enabled" : "Disabled"}
+          </span>
+        </button>
+      </td>
+      <td className="py-4 px-4">
+        <button className="flex items-center gap-2 cursor-pointer">
+          {token.autoConvert ? (
+            <ToggleRight className="size-6 text-green-400" />
+          ) : (
+            <ToggleLeft className="size-6 text-neutral-500" />
+          )}
+        </button>
+      </td>
+      <td className="py-4 px-4 font-mono text-neutral-400">{token.minAmount}</td>
+      <td className="py-4 px-4 font-mono text-neutral-400">{token.maxAmount}</td>
+      <td className="py-4 px-4">
+        <button className="p-2 hover:bg-white/5 rounded-lg transition-colors cursor-pointer">
+          <Settings className="size-4" />
+        </button>
+      </td>
+    </motion.tr>
+  ));
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="mb-8">
@@ -54,52 +110,7 @@ export default function TokenWhitelistPage() {
               </tr>
             </thead>
             <tbody>
-              {tokens.map((token, index) => (
-                <motion.tr
-                  key={token.symbol}
-                  className="border-b border-white/5 hover:bg-white/[0.02] transition-colors"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 + index * 0.05 }}
-                >
-                  <td className="py-4 px-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-white/20 to-white/10 flex items-center justify-center font-medium text-xs">
-                        {token.symbol.slice(0, 2)}
-                      </div>
-                      <span className="font-medium">{token.symbol}</span>
-                    </div>
-                  </td>
-                  <td className="py-4 px-4">
-                    <button className="flex items-center gap-2 cursor-pointer">
-                      {token.enabled ? (
-                        <ToggleRight className="size-6 text-green-400" />
-                      ) : (
-                        <ToggleLeft className="size-6 text-neutral-500" />
-                      )}
-                      <span className={token.enabled ? "text-green-400" : "text-neutral-500"}>
-                        {token.enabled ? "Enabled" : "Disabled"}
-                      </span>
-                    </button>
-                  </td>
-                  <td className="py-4 px-4">
-                    <button className="flex items-center gap-2 cursor-pointer">
-                      {token.autoConvert ? (
-                        <ToggleRight className="size-6 text-green-400" />
-                      ) : (
-                        <ToggleLeft className="size-6 text-neutral-500" />
-                      )}
-                    </button>
-                  </td>
-                  <td className="py-4 px-4 font-mono text-neutral-400">{token.minAmount}</td>
-                  <td className="py-4 px-4 font-mono text-neutral-400">{token.maxAmount}</td>
-                  <td className="py-4 px-4">
-                    <button className="p-2 hover:bg-white/5 rounded-lg transition-colors cursor-pointer">
-                      <Settings className="size-4" />
-                    </button>
-                  </td>
-                </motion.tr>
-              ))}
+              {tokenRows}
             </tbody>
           </table>
         </div>

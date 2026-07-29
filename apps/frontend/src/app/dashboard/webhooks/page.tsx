@@ -1,9 +1,11 @@
 'use client';
 
 import { motion } from "motion/react";
-import { Plus, AlertCircle, Activity } from "lucide-react";
+import { Plus, AlertCircle, Activity, Webhook } from "lucide-react";
+import { useState } from "react";
+import { EmptyState } from "@/components/EmptyState";
 
-const webhooks = [
+const initialWebhooks = [
   {
     id: 'wh_1a2b3c',
     endpoint: 'https://api.acmecorp.com/webhooks',
@@ -31,6 +33,8 @@ const webhooks = [
 ];
 
 export default function WebhooksPage() {
+  const [webhooks] = useState(initialWebhooks);
+
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="mb-8">
@@ -48,9 +52,9 @@ export default function WebhooksPage() {
 
       <div className="grid sm:grid-cols-3 gap-4 mb-8">
         {[
-          { label: 'Active Webhooks', value: '2' },
-          { label: 'Total Deliveries', value: '1,247' },
-          { label: 'Success Rate', value: '99.8%' },
+          { label: 'Active Webhooks', value: webhooks.filter((w) => w.status === 'active').length.toString() },
+          { label: 'Total Deliveries', value: webhooks.length > 0 ? '1,247' : '0' },
+          { label: 'Success Rate', value: webhooks.length > 0 ? '99.8%' : '—' },
         ].map((stat, index) => (
           <motion.div
             key={stat.label}
@@ -91,52 +95,61 @@ export default function WebhooksPage() {
                </tr>
             </thead>
             <tbody>
-              {webhooks.map((webhook, index) => (
-                <motion.tr
-                  key={webhook.id}
-                  className="border-b border-white/5 hover:bg-white/[0.02] transition-colors"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 + index * 0.05 }}
-                >
-                  <td className="py-4 px-4 font-mono text-xs">{webhook.id}</td>
-                  <td className="py-4 px-4 text-neutral-400 text-xs">{webhook.endpoint}</td>
-                  <td className="py-4 px-4">
-                    <div className="flex flex-wrap gap-1">
-                      {webhook.events.slice(0, 2).map((event) => (
-                        <span
-                          key={event}
-                          className="px-2 py-1 bg-white/5 rounded text-xs whitespace-nowrap"
-                        >
-                          {event}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="py-4 px-4">
-                    <span
-                      className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${
-                        webhook.status === 'active'
-                          ? 'bg-green-400/10 text-green-400'
-                          : 'bg-neutral-400/10 text-neutral-400'
-                      }`}
-                    >
-                      {webhook.status === 'active' ? (
-                        <Activity className="size-3" />
-                      ) : (
-                        <AlertCircle className="size-3" />
-                      )}
-                      {webhook.status}
-                    </span>
-                  </td>
-                  <td className="py-4 px-4 text-neutral-400">{webhook.lastTriggered}</td>
-                  <td className="py-4 px-4">
-                    <button className="font-mono text-xs text-neutral-500 hover:text-white transition-colors cursor-pointer">
-                      {webhook.hash}
-                    </button>
-                  </td>
-                </motion.tr>
-              ))}
+              {webhooks.length === 0 ? (
+                <EmptyState
+                  icon={Webhook}
+                  title="No webhooks configured"
+                  description="Webhooks notify your server when events happen in your account. Add a webhook to start receiving event notifications."
+                  action={{ label: 'Add Webhook', onClick: () => {} }}
+                />
+              ) : (
+                webhooks.map((webhook, index) => (
+                  <motion.tr
+                    key={webhook.id}
+                    className="border-b border-white/5 hover:bg-white/[0.02] transition-colors"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 + index * 0.05 }}
+                  >
+                    <td className="py-4 px-4 font-mono text-xs">{webhook.id}</td>
+                    <td className="py-4 px-4 text-neutral-400 text-xs">{webhook.endpoint}</td>
+                    <td className="py-4 px-4">
+                      <div className="flex flex-wrap gap-1">
+                        {webhook.events.slice(0, 2).map((event) => (
+                          <span
+                            key={event}
+                            className="px-2 py-1 bg-white/5 rounded text-xs whitespace-nowrap"
+                          >
+                            {event}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="py-4 px-4">
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${
+                          webhook.status === 'active'
+                            ? 'bg-green-400/10 text-green-400'
+                            : 'bg-neutral-400/10 text-neutral-400'
+                        }`}
+                      >
+                        {webhook.status === 'active' ? (
+                          <Activity className="size-3" />
+                        ) : (
+                          <AlertCircle className="size-3" />
+                        )}
+                        {webhook.status}
+                      </span>
+                    </td>
+                    <td className="py-4 px-4 text-neutral-400">{webhook.lastTriggered}</td>
+                    <td className="py-4 px-4">
+                      <button className="font-mono text-xs text-neutral-500 hover:text-white transition-colors cursor-pointer">
+                        {webhook.hash}
+                      </button>
+                    </td>
+                  </motion.tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
