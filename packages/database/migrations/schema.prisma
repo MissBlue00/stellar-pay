@@ -61,6 +61,7 @@ model Merchant {
   apiKeys          ApiKey[]
   auditLogs        AuditLog[]
   customers        Customer[]
+  subscriptions    Subscription[]
   users            User[]
   escrows          EscrowTransaction[]
 
@@ -94,6 +95,8 @@ model Customer {
   updatedAt   DateTime       @updatedAt @map("updated_at")
 
   merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  subscriptions Subscription[]
 
   @@index([merchantId, status])
   @@map("customers")
@@ -200,20 +203,40 @@ model AuditLog {
   @@map("audit_logs")
 }
 
-model EscrowTransaction {
-  id         String       @id @default(uuid()) @db.Uuid
-  merchantId String       @map("merchant_id") @db.Uuid
-  sender     String
-  receiver   String
-  amount     Decimal      @db.Decimal(18, 2)
-  assetCode  String       @map("asset_code") @db.VarChar(10)
-  milestones Json
-  status     EscrowStatus @default(PENDING)
-  createdAt  DateTime     @default(now()) @map("created_at")
-  updatedAt  DateTime     @updatedAt @map("updated_at")
+enum SubscriptionInterval {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+
+  @@map("subscription_interval")
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAUSED
+  CANCELLED
+  EXPIRED
+
+  @@map("subscription_status")
+}
+
+model Subscription {
+  id         String               @id @default(uuid()) @db.Uuid
+  merchantId String               @map("merchant_id") @db.Uuid
+  customerId String               @map("customer_id") @db.Uuid
+  planName   String               @map("plan_name")
+  amount     Decimal              @db.Decimal(18, 2)
+  currency   String               @db.VarChar(3)
+  interval   SubscriptionInterval
+  status     SubscriptionStatus
+  createdAt  DateTime             @default(now()) @map("created_at")
+  updatedAt  DateTime             @updatedAt @map("updated_at")
 
   merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
   @@index([merchantId, status])
-  @@map("escrow_transactions")
+  @@index([customerId])
+  @@map("subscriptions")
 }

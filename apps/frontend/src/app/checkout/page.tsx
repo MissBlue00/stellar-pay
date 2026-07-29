@@ -11,7 +11,6 @@ import {
   CheckCircle2,
   Shield,
   Clock,
-  ExternalLink,
   ChevronDown,
   Loader2,
   Lock,
@@ -20,7 +19,19 @@ import {
   RefreshCw,
   XCircle,
 } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '../components/ui/button';
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from '../components/ui/form';
+import { Input } from '../components/ui/input';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 
@@ -28,13 +39,32 @@ type PaymentMethod = 'card' | 'bank' | 'crypto';
 type PaymentState = 'initial' | 'creating' | 'processing' | 'confirming' | 'success' | 'failed';
 type CryptoToken = 'BTC' | 'ETH' | 'USDC';
 
-interface PaymentDetails {
-  merchantName: string;
-  merchantLogo: string;
+const checkoutSchema = z.object({
+  amount: z.number().positive('Amount must be a positive number'),
+  currency: z.string().min(1, 'Currency selection is required'),
+  cardNumber: z.string().regex(/^[\d\s]{13,19}$/, 'Invalid card number'),
+  cardExpiry: z.string().regex(/^\d{2}\s?\/\s?\d{2}$/, 'Use MM / YY format'),
+  cardCvc: z.string().regex(/^\d{3,4}$/, 'Invalid CVC'),
+  cardName: z.string().min(1, 'Cardholder name is required'),
+});
+
+type CheckoutFormData = {
   amount: number;
   currency: string;
-  description: string;
-}
+  cardNumber: string;
+  cardExpiry: string;
+  cardCvc: string;
+  cardName: string;
+};
+
+const defaultValues: CheckoutFormData = {
+  amount: 1299.99,
+  currency: 'USD',
+  cardNumber: '',
+  cardExpiry: '',
+  cardCvc: '',
+  cardName: '',
+};
 
 export default function PaymentCheckout() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
@@ -42,28 +72,32 @@ export default function PaymentCheckout() {
   const [selectedToken, setSelectedToken] = useState<CryptoToken>('USDC');
   const [timeRemaining, setTimeRemaining] = useState(900);
   const [copied, setCopied] = useState(false);
-  const [confirmations, setConfirmations] = useState(0);
-  const [cardData, setCardData] = useState({
-    number: '',
-    expiry: '',
-    cvv: '',
-    name: '',
-  });
-  const [paymentId, setPaymentId] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [confirmations, _setConfirmations] = useState(0);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_paymentId, setPaymentId] = useState<string | null>(null);
   const [paymentRef, setPaymentRef] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const paymentDetails: PaymentDetails = {
+  const form = useForm<CheckoutFormData>({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(checkoutSchema) as any,
+    defaultValues,
+    mode: 'onChange',
+  });
+
+  const amount = form.watch('amount');
+  const currency = form.watch('currency');
+  const { isValid } = form.formState;
+  const processingFee = paymentMethod === 'crypto' ? 2.5 : 3.99;
+  const totalAmount = amount + processingFee;
+
+  const paymentDetails = {
     merchantName: 'Acme Corporation',
     merchantLogo: 'AC',
-    amount: 1299.99,
-    currency: 'USD',
     description: 'Enterprise Annual Subscription',
   };
-
-  const processingFee = paymentMethod === 'crypto' ? 2.5 : 3.99;
-  const totalAmount = paymentDetails.amount + processingFee;
 
   const cryptoAddresses = {
     BTC: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
@@ -90,25 +124,25 @@ export default function PaymentCheckout() {
     }
   }, []);
 
-  const pollPaymentStatus = useCallback(async (id: string) => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/payments/${id}/status`);
-      if (!res.ok) throw new Error('Failed to fetch payment status');
-      const data = await res.json();
-      if (data.status === 'detected' || data.status === 'confirmed') {
-        stopPolling();
-        setPaymentState('success');
-      } else if (data.status === 'failed') {
-        stopPolling();
-        setPaymentState('failed');
-      } else if (data.status === 'confirmed') {
-        stopPolling();
-        setPaymentState('success');
+  const pollPaymentStatus = useCallback(
+    async (id: string) => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/payments/${id}/status`);
+        if (!res.ok) throw new Error('Failed to fetch payment status');
+        const data = await res.json();
+        if (data.status === 'detected' || data.status === 'confirmed') {
+          stopPolling();
+          setPaymentState('success');
+        } else if (data.status === 'failed') {
+          stopPolling();
+          setPaymentState('failed');
+        }
+      } catch {
+        // Silently retry on next poll interval
       }
-    } catch {
-      // Silently retry on next poll interval
-    }
-  }, [stopPolling]);
+    },
+    [stopPolling],
+  );
 
   const createPayment = useCallback(async () => {
     setError(null);
@@ -144,7 +178,6 @@ export default function PaymentCheckout() {
     return () => stopPolling();
   }, [stopPolling]);
 
-  // Timer countdown for bank transfer
   useEffect(() => {
     if (paymentMethod === 'bank' && paymentState === 'processing') {
       const timer = setInterval(() => {
@@ -173,10 +206,10 @@ export default function PaymentCheckout() {
   };
 
   const handleCardPayment = () => {
-    if (!cardData.number || !cardData.expiry || !cardData.cvv || !cardData.name) {
-      return;
-    }
-    createPayment();
+    form.trigger().then((isValid) => {
+      if (!isValid) return;
+      createPayment();
+    });
   };
 
   const handleBankPayment = () => {
@@ -240,7 +273,7 @@ export default function PaymentCheckout() {
                   <div className="flex justify-between items-center">
                     <span className="text-zinc-400 text-sm">Amount Paid</span>
                     <span className="text-white text-lg">
-                      ${totalAmount.toFixed(2)} {paymentDetails.currency}
+                      ${totalAmount.toFixed(2)} {currency}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
@@ -360,7 +393,7 @@ export default function PaymentCheckout() {
           <p className="text-sm text-zinc-500 mb-6">{paymentDetails.description}</p>
           <div className="text-5xl tracking-tight mb-4">
             <span className="bg-gradient-to-br from-white to-zinc-400 bg-clip-text text-transparent">
-              ${paymentDetails.amount.toFixed(2)}
+              ${amount.toFixed(2)}
             </span>
           </div>
           <div className="inline-flex items-center px-4 py-2 bg-zinc-900/50 border border-zinc-800/50 rounded-full backdrop-blur-sm">
@@ -382,9 +415,76 @@ export default function PaymentCheckout() {
               <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-zinc-700/5 to-transparent blur-3xl pointer-events-none" />
 
               <div className="relative">
-                {/* Payment Method Selection */}
                 {paymentState === 'initial' && (
                   <>
+                    {/* Payment Amount & Currency */}
+                    <Form {...form}>
+                      <div className="grid grid-cols-2 gap-4 mb-8">
+                        <FormField
+                          control={form.control}
+                          name="amount"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-sm text-zinc-400 tracking-wide">
+                                Amount
+                              </FormLabel>
+                              <FormControl>
+                                <div className="relative">
+                                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500">
+                                    $
+                                  </span>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={field.value}
+                                    onChange={(e) => field.onChange(Number(e.target.value))}
+                                    onBlur={field.onBlur}
+                                    className="bg-black/40 border border-zinc-800/50 rounded-xl px-4 py-3.5 pl-8 text-white placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 focus:bg-black/60 transition-all duration-200 h-auto"
+                                  />
+                                </div>
+                              </FormControl>
+                              <FormMessage className="text-red-400 text-xs" />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="currency"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-sm text-zinc-400 tracking-wide">
+                                Currency
+                              </FormLabel>
+                              <FormControl>
+                                <div className="relative">
+                                  <select
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    onBlur={field.onBlur}
+                                    className="w-full bg-black/40 border border-zinc-800/50 rounded-xl px-4 py-3.5 text-white appearance-none cursor-pointer focus:outline-none focus:border-zinc-600 focus:bg-black/60 transition-all duration-200"
+                                  >
+                                    <option value="">Select currency</option>
+                                    <option value="USD">USD</option>
+                                    <option value="EUR">EUR</option>
+                                    <option value="GBP">GBP</option>
+                                    <option value="NGN">NGN</option>
+                                    <option value="XLM">XLM</option>
+                                  </select>
+                                  <ChevronDown
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500 pointer-events-none"
+                                    strokeWidth={1.5}
+                                  />
+                                </div>
+                              </FormControl>
+                              <FormMessage className="text-red-400 text-xs" />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </Form>
+
+                    {/* Payment Method Selection */}
                     <div className="mb-8">
                       <h3 className="text-sm uppercase tracking-wider text-zinc-500 mb-4">
                         Payment Method
@@ -442,74 +542,106 @@ export default function PaymentCheckout() {
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -20 }}
                           transition={{ duration: 0.3 }}
-                          className="space-y-5"
                         >
-                          <div>
-                            <label className="block text-sm text-zinc-400 mb-2.5 tracking-wide">
-                              Card Number
-                            </label>
-                            <div className="relative">
-                              <input
-                                type="text"
-                                placeholder="1234 5678 9012 3456"
-                                value={cardData.number}
-                                onChange={(e) =>
-                                  setCardData({ ...cardData, number: e.target.value })
-                                }
-                                className="w-full bg-black/40 border border-zinc-800/50 rounded-xl px-4 py-3.5 text-white placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 focus:bg-black/60 transition-all duration-200"
+                          <Form {...form}>
+                            <div className="space-y-5">
+                              <FormField
+                                control={form.control}
+                                name="cardNumber"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel className="text-sm text-zinc-400 tracking-wide">
+                                      Card Number
+                                    </FormLabel>
+                                    <FormControl>
+                                      <div className="relative">
+                                        <Input
+                                          type="text"
+                                          placeholder="1234 5678 9012 3456"
+                                          className="bg-black/40 border border-zinc-800/50 rounded-xl px-4 py-3.5 text-white placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 focus:bg-black/60 transition-all duration-200 h-auto"
+                                          {...field}
+                                        />
+                                        <CreditCard
+                                          className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-600"
+                                          strokeWidth={1.5}
+                                        />
+                                      </div>
+                                    </FormControl>
+                                    <FormMessage className="text-red-400 text-xs" />
+                                  </FormItem>
+                                )}
                               />
-                              <CreditCard
-                                className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-600"
-                                strokeWidth={1.5}
-                              />
-                            </div>
-                          </div>
 
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <label className="block text-sm text-zinc-400 mb-2.5 tracking-wide">
-                                Expiry
-                              </label>
-                              <input
-                                type="text"
-                                placeholder="MM / YY"
-                                value={cardData.expiry}
-                                onChange={(e) =>
-                                  setCardData({ ...cardData, expiry: e.target.value })
-                                }
-                                className="w-full bg-black/40 border border-zinc-800/50 rounded-xl px-4 py-3.5 text-white placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 focus:bg-black/60 transition-all duration-200"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-sm text-zinc-400 mb-2.5 tracking-wide">
-                                CVC
-                              </label>
-                              <input
-                                type="text"
-                                placeholder="123"
-                                value={cardData.cvv}
-                                onChange={(e) => setCardData({ ...cardData, cvv: e.target.value })}
-                                className="w-full bg-black/40 border border-zinc-800/50 rounded-xl px-4 py-3.5 text-white placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 focus:bg-black/60 transition-all duration-200"
-                              />
-                            </div>
-                          </div>
+                              <div className="grid grid-cols-2 gap-4">
+                                <FormField
+                                  control={form.control}
+                                  name="cardExpiry"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel className="text-sm text-zinc-400 tracking-wide">
+                                        Expiry
+                                      </FormLabel>
+                                      <FormControl>
+                                        <Input
+                                          type="text"
+                                          placeholder="MM / YY"
+                                          className="bg-black/40 border border-zinc-800/50 rounded-xl px-4 py-3.5 text-white placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 focus:bg-black/60 transition-all duration-200 h-auto"
+                                          {...field}
+                                        />
+                                      </FormControl>
+                                      <FormMessage className="text-red-400 text-xs" />
+                                    </FormItem>
+                                  )}
+                                />
+                                <FormField
+                                  control={form.control}
+                                  name="cardCvc"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel className="text-sm text-zinc-400 tracking-wide">
+                                        CVC
+                                      </FormLabel>
+                                      <FormControl>
+                                        <Input
+                                          type="text"
+                                          placeholder="123"
+                                          className="bg-black/40 border border-zinc-800/50 rounded-xl px-4 py-3.5 text-white placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 focus:bg-black/60 transition-all duration-200 h-auto"
+                                          {...field}
+                                        />
+                                      </FormControl>
+                                      <FormMessage className="text-red-400 text-xs" />
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
 
-                          <div>
-                            <label className="block text-sm text-zinc-400 mb-2.5 tracking-wide">
-                              Cardholder Name
-                            </label>
-                            <input
-                              type="text"
-                              placeholder="Name on card"
-                              value={cardData.name}
-                              onChange={(e) => setCardData({ ...cardData, name: e.target.value })}
-                              className="w-full bg-black/40 border border-zinc-800/50 rounded-xl px-4 py-3.5 text-white placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 focus:bg-black/60 transition-all duration-200"
-                            />
-                          </div>
+                              <FormField
+                                control={form.control}
+                                name="cardName"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel className="text-sm text-zinc-400 tracking-wide">
+                                      Cardholder Name
+                                    </FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        type="text"
+                                        placeholder="Name on card"
+                                        className="bg-black/40 border border-zinc-800/50 rounded-xl px-4 py-3.5 text-white placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 focus:bg-black/60 transition-all duration-200 h-auto"
+                                        {...field}
+                                      />
+                                    </FormControl>
+                                    <FormMessage className="text-red-400 text-xs" />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                          </Form>
 
                           <Button
                             onClick={handleCardPayment}
-                            className="w-full bg-white hover:bg-zinc-100 text-black h-14 rounded-xl mt-8 text-base transition-all duration-200 shadow-lg shadow-white/10"
+                            disabled={!isValid}
+                            className="w-full bg-white hover:bg-zinc-100 text-black h-14 rounded-xl mt-8 text-base transition-all duration-200 shadow-lg shadow-white/10 disabled:opacity-40 disabled:cursor-not-allowed"
                           >
                             <Lock className="w-4 h-4 mr-2" strokeWidth={2} />
                             Pay ${totalAmount.toFixed(2)}
@@ -583,7 +715,7 @@ export default function PaymentCheckout() {
                               <div className="flex justify-between items-center">
                                 <span className="text-zinc-500">Transfer Amount</span>
                                 <span className="text-white text-base">
-                                  ${totalAmount.toFixed(2)} {paymentDetails.currency}
+                                  ${totalAmount.toFixed(2)} {currency}
                                 </span>
                               </div>
                             </div>
@@ -695,7 +827,7 @@ export default function PaymentCheckout() {
                               {tokenAmounts[selectedToken]} {selectedToken}
                             </div>
                             <div className="text-zinc-500 text-sm">
-                              ≈ ${totalAmount.toFixed(2)} {paymentDetails.currency}
+                              ≈ ${totalAmount.toFixed(2)} {currency}
                             </div>
                           </div>
 
@@ -869,7 +1001,7 @@ export default function PaymentCheckout() {
                     <div className="h-px bg-zinc-800/50" />
                     <div className="flex justify-between text-sm">
                       <span className="text-zinc-400">Subtotal</span>
-                      <span className="text-white">${paymentDetails.amount.toFixed(2)}</span>
+                      <span className="text-white">${amount.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-zinc-400">Processing Fee</span>
