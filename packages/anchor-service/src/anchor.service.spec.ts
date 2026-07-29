@@ -140,6 +140,32 @@ describe('AnchorService.fetchTransactionHistory', () => {
   });
 });
 
+describe('AnchorService SEP-24 deposits', () => {
+  it('creates an interactive deposit and exposes its polling status', async () => {
+    const service = new AnchorService();
+
+    const result = await service.createSep24Deposit('USDC', '100', 'account-123');
+
+    expect(result.success).toBe(true);
+    expect(result.interactiveUrl).toContain('/deposit/interactive');
+    expect(result.interactiveUrl).toContain('asset_code=USDC');
+    expect(result.interactiveUrl).toContain('amount=100');
+    expect(result.interactiveUrl).toContain('account=account-123');
+    expect(result.status).toBe('pending');
+
+    expect(result.transactionId).toBeDefined();
+
+    const polled = service.pollSep24DepositStatus(result.transactionId ?? '');
+
+    expect(polled).toMatchObject({
+      transactionId: result.transactionId,
+      status: 'pending',
+      assetCode: 'USDC',
+      amount: '100',
+    });
+  });
+});
+
 describe('AnchorService SEP-24 withdrawals', () => {
   it('creates an interactive withdrawal and exposes its polling status', async () => {
     const service = new AnchorService();

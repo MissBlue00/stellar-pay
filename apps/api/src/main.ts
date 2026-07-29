@@ -1,5 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import cookieParser from 'cookie-parser';
+import compression from 'compression';
+import type { Request, Response } from 'express';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { CsrfMiddleware } from './common/middleware/csrf.middleware';
@@ -7,6 +9,17 @@ import { CsrfMiddleware } from './common/middleware/csrf.middleware';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.use(cookieParser());
+  app.use(
+    compression({
+      threshold: 1024,
+      filter: (req: Request, res: Response) => {
+        if (req.path.startsWith('/health')) {
+          return false;
+        }
+        return compression.filter(req, res);
+      },
+    }),
+  );
   const csrfMiddleware = new CsrfMiddleware();
   app.use(csrfMiddleware.use.bind(csrfMiddleware));
 
