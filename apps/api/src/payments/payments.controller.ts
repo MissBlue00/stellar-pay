@@ -108,6 +108,8 @@ export class PaymentsController {
     enum: ['pending', 'detected', 'confirmed', 'failed'],
   })
   @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'sortBy', required: false, type: String })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'] })
   @ApiResponse({ status: 200, description: 'Payment intents retrieved successfully' })
   @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -119,6 +121,8 @@ export class PaymentsController {
       limit: query.limit ?? 20,
       status: query.status,
       search: query.search,
+      sortBy: query.sortBy,
+      sortOrder: query.sortOrder,
     });
   }
 

@@ -96,8 +96,15 @@ export class PaymentsService {
 
   findAll(
     merchantId: string,
-    opts: { page: number; limit: number; status?: string; search?: string },
-  ): { data: StoredIntent[]; total: number; page: number; limit: number } {
+    opts: {
+      page: number;
+      limit: number;
+      status?: string;
+      search?: string;
+      sortBy?: string;
+      sortOrder?: 'asc' | 'desc';
+    },
+  ): { data: StoredIntent[]; total: number; page: number; limit: number; totalPages: number } {
     let results = this.payments.filter((p) => p.merchantId === merchantId);
 
     if (opts.status) {
@@ -115,13 +122,33 @@ export class PaymentsService {
       );
     }
 
-    results.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    if (opts.sortBy) {
+      const order = opts.sortOrder === 'asc' ? 1 : -1;
+      results.sort((a, b) => {
+        const key = opts.sortBy as keyof StoredIntent;
+        const fa = a[key] as unknown;
+        const fb = b[key] as unknown;
+        if (fa == null && fb == null) return 0;
+        if (fa == null) return 1 * order;
+        if (fb == null) return -1 * order;
+        if (typeof fa === 'number' && typeof fb === 'number') return (fa - fb) * order;
+        const sa = String(fa).toLowerCase();
+        const sb = String(fb).toLowerCase();
+        if (sa < sb) return -1 * order;
+        if (sa > sb) return 1 * order;
+        return 0;
+      });
+    } else {
+      results.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }
 
     const total = results.length;
     const start = (opts.page - 1) * opts.limit;
     const data = results.slice(start, start + opts.limit);
 
-    return { data, total, page: opts.page, limit: opts.limit };
+    const totalPages = Math.max(1, Math.ceil(total / opts.limit));
+
+    return { data, total, page: opts.page, limit: opts.limit, totalPages };
   }
 
   findOne(paymentId: string): StoredIntent | undefined {
