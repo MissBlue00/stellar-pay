@@ -262,28 +262,40 @@ model Subscription {
   createdAt  DateTime             @default(now()) @map("created_at")
   updatedAt  DateTime             @updatedAt @map("updated_at")
 
-  merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
-  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  merchant Merchant               @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  customer Customer               @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  invoices SubscriptionInvoice[]
 
   @@index([merchantId, status])
   @@index([customerId])
   @@map("subscriptions")
 }
 
-model EscrowTransaction {
-  id         String       @id @default(uuid()) @db.Uuid
-  merchantId String       @map("merchant_id") @db.Uuid
-  sender     String
-  receiver   String
-  amount     Decimal      @db.Decimal(18, 2)
-  assetCode  String       @map("asset_code") @db.VarChar(10)
-  milestones Json
-  status     EscrowStatus @default(PENDING)
-  createdAt  DateTime     @default(now()) @map("created_at")
-  updatedAt  DateTime     @updatedAt @map("updated_at")
+enum SubscriptionInvoiceStatus {
+  PENDING
+  PAID
+  OVERDUE
+  CANCELLED
+  REFUNDED
 
-  merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  @@map("subscription_invoice_status")
+}
 
-  @@index([merchantId, status])
-  @@map("escrow_transactions")
+model SubscriptionInvoice {
+  id               String                    @id @default(uuid()) @db.Uuid
+  subscriptionId   String                    @map("subscription_id") @db.Uuid
+  invoiceNumber    String                    @unique @map("invoice_number")
+  amount           Decimal                   @db.Decimal(18, 2)
+  currency         String                    @db.VarChar(3)
+  dueDate          DateTime                  @map("due_date")
+  paidAt           DateTime?                 @map("paid_at")
+  status           SubscriptionInvoiceStatus @default(PENDING)
+  createdAt        DateTime                  @default(now()) @map("created_at")
+  updatedAt        DateTime                  @updatedAt @map("updated_at")
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([subscriptionId, status])
+  @@index([status])
+  @@map("subscription_invoices")
 }
