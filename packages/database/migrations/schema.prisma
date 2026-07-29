@@ -40,6 +40,7 @@ enum UserRole {
 model Merchant {
   id           String    @id @default(uuid()) @db.Uuid
   email        String    @unique
+  name         String?
   passwordHash String    @map("password_hash")
   kycStatus    KycStatus @default(PENDING) @map("kyc_status")
   createdAt    DateTime  @default(now()) @map("created_at")
