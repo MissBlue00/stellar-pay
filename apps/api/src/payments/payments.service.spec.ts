@@ -161,6 +161,61 @@ describe('PaymentsService – webhook event dispatch', () => {
     });
   });
 
+  // ─── findOne / findOneOrFail (GET /payments/:id) ──────────────────────────
+
+  describe('findOne', () => {
+    it('returns the payment when found', () => {
+      const payment = service.createPaymentIntent(
+        { amount: 100, currency: Currency.USDC },
+        'merchant-1',
+      );
+      expect(service.findOne(payment.id)).toBeDefined();
+    });
+
+    it('returns undefined for an unknown payment id', () => {
+      expect(service.findOne('no-such-id')).toBeUndefined();
+    });
+  });
+
+  describe('findOneOrFail', () => {
+    it('returns the payment when found', () => {
+      const payment = service.createPaymentIntent(
+        { amount: 50, currency: Currency.EURC },
+        'merchant-2',
+      );
+      const found = service.findOneOrFail(payment.id);
+      expect(found.id).toBe(payment.id);
+      expect(found.amount).toBe(50);
+      expect(found.currency).toBe('EURC');
+    });
+
+    it('throws NotFoundException for an unknown payment id', () => {
+      expect(() => service.findOneOrFail('no-such-id')).toThrow(NotFoundException);
+    });
+
+    it('returns all required payment fields and timestamps', () => {
+      const payment = service.createPaymentIntent(
+        { amount: 200, currency: Currency.USDC, reference: 'ref-123', metadata: { order: 'abc' } },
+        'merchant-3',
+      );
+      const found = service.findOneOrFail(payment.id);
+
+      expect(found).toMatchObject({
+        id: payment.id,
+        paymentId: payment.id,
+        paymentReference: payment.paymentReference,
+        merchantId: 'merchant-3',
+        amount: 200,
+        currency: 'USDC',
+        reference: 'ref-123',
+        status: 'pending',
+      });
+      expect(typeof found.createdAt).toBe('string');
+      expect(typeof found.updatedAt).toBe('string');
+      expect(typeof found.expiresAt).toBe('string');
+    });
+  });
+
   // ─── payload shape ────────────────────────────────────────────────────────
 
   describe('dispatch payload shape', () => {
