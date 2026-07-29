@@ -16,6 +16,7 @@ import { WorkerModule } from './modules/worker/worker.module';
 import { WebhookModule } from './webhooks/webhook.module';
 import { MerchantsModule } from './merchants/merchants.module';
 import { PaymentsModule } from './payments/payments.module';
+import { AdminModule } from './admin/admin.module';
 import { PrismaClientExceptionFilter } from './prisma/prisma-exception.filter';
 import { RequestLoggerMiddleware } from './common/middleware/request-logger.middleware';
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
@@ -32,6 +33,7 @@ import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
     WebhookModule,
     MerchantsModule,
     PaymentsModule,
+    AdminModule,
     ThrottlerModule.forRoot({
       throttlers: [
         { name: 'short', ttl: 60000, limit: 100 },
