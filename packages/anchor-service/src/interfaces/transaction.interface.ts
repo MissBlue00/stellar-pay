@@ -1,10 +1,6 @@
 export type AnchorTransactionType = 'deposit' | 'withdrawal';
 export type AnchorTransactionStatus =
-  | 'pending'
-  | 'completed'
-  | 'failed'
-  | 'refunded'
-  | 'partially_refunded';
+  'pending' | 'completed' | 'failed' | 'refunded' | 'partially_refunded';
 
 export interface AnchorTransaction {
   id: string;

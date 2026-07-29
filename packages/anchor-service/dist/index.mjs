@@ -5,6 +5,8 @@ var AnchorService = class {
   customers = /* @__PURE__ */ new Map();
   accountLinks = /* @__PURE__ */ new Map();
   sep24Deposits = /* @__PURE__ */ new Map();
+  sep24Withdrawals = /* @__PURE__ */ new Map();
+  swaps = /* @__PURE__ */ new Map();
   // ---------------------------------------------------------------------------
   // SEP-31 Direct Payment
   // ---------------------------------------------------------------------------
@@ -542,6 +544,87 @@ var AnchorService = class {
     return true;
   }
   // ---------------------------------------------------------------------------
+  // SEP-24 Withdrawal Flow
+  // ---------------------------------------------------------------------------
+  async createSep24Withdrawal(assetCode, amount, accountId) {
+    const id = `sep24_withdraw_${crypto.randomUUID().split("-").join("").slice(0, 16)}`;
+    try {
+      const interactiveUrl = this.buildWithdrawalInteractiveUrl(assetCode, amount, accountId, id);
+      const record = {
+        id,
+        accountId,
+        assetCode,
+        amount,
+        status: "pending",
+        interactiveUrl,
+        createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+        updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+      };
+      this.sep24Withdrawals.set(id, record);
+      return {
+        success: true,
+        id,
+        interactiveUrl,
+        amount,
+        assetCode,
+        status: "pending",
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt
+      };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      const record = {
+        id,
+        accountId,
+        assetCode,
+        amount,
+        status: "failed",
+        error: errorMessage,
+        createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+        updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+      };
+      this.sep24Withdrawals.set(id, record);
+      return {
+        success: false,
+        id,
+        error: errorMessage,
+        amount,
+        assetCode,
+        status: "failed",
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt
+      };
+    }
+  }
+  pollSep24WithdrawalStatus(id) {
+    const withdrawal = this.sep24Withdrawals.get(id);
+    if (!withdrawal) {
+      return void 0;
+    }
+    return {
+      success: true,
+      id: withdrawal.id,
+      amount: withdrawal.amount,
+      assetCode: withdrawal.assetCode,
+      status: withdrawal.status,
+      interactiveUrl: withdrawal.interactiveUrl,
+      createdAt: withdrawal.createdAt,
+      updatedAt: withdrawal.updatedAt,
+      error: withdrawal.error
+    };
+  }
+  buildWithdrawalInteractiveUrl(assetCode, amount, accountId, id) {
+    const anchorUrl = process.env.ANCHOR_URL ?? "https://anchor.example.com";
+    const url = new URL(anchorUrl);
+    const pathname = url.pathname.replace(/\/$/, "");
+    url.pathname = `${pathname}/withdraw/interactive`;
+    url.searchParams.set("account", accountId);
+    url.searchParams.set("asset_code", assetCode);
+    url.searchParams.set("amount", amount);
+    url.searchParams.set("transaction_id", id);
+    return url.toString();
+  }
+  // ---------------------------------------------------------------------------
   // SEP-24 Deposit Flow
   // ---------------------------------------------------------------------------
   async createSep24Deposit(params) {
@@ -671,6 +754,103 @@ var AnchorService = class {
       };
     }
     return void 0;
+  }
+  // ---------------------------------------------------------------------------
+  // Atomic Asset Swap
+  // ---------------------------------------------------------------------------
+  async swapAssets(params) {
+    const validation = this.validateSwapParams(params);
+    if (!validation.isValid) {
+      const errorMsg = validation.error ?? "Invalid swap parameters";
+      return this.buildSwapError(params, errorMsg);
+    }
+    const swapId = `swap_${crypto.randomUUID().split("-").join("").slice(0, 16)}`;
+    const sourceAmount = parseFloat(params.sourceAmount);
+    const destinationAmount = (sourceAmount * 0.995).toFixed(7);
+    const record = {
+      swapId,
+      sourceAsset: params.sourceAsset,
+      destinationAsset: params.destinationAsset,
+      sourceAmount: params.sourceAmount,
+      destinationAmount,
+      destinationAddress: params.destinationAddress,
+      status: "pending",
+      createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+      updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+    };
+    this.swaps.set(swapId, record);
+    try {
+      const txHash = `tx_${crypto.randomUUID().split("-").join("").slice(0, 16)}`;
+      record.stellarTransactionHash = txHash;
+      record.status = "completed";
+      record.updatedAt = (/* @__PURE__ */ new Date()).toISOString();
+      this.swaps.set(swapId, record);
+      return {
+        success: true,
+        swapId,
+        sourceAsset: params.sourceAsset,
+        destinationAsset: params.destinationAsset,
+        sourceAmount: params.sourceAmount,
+        destinationAmount,
+        status: "completed",
+        stellarTransactionHash: txHash,
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt
+      };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      record.status = "failed";
+      record.error = errorMessage;
+      record.updatedAt = (/* @__PURE__ */ new Date()).toISOString();
+      this.swaps.set(swapId, record);
+      return {
+        success: false,
+        swapId,
+        sourceAsset: params.sourceAsset,
+        destinationAsset: params.destinationAsset,
+        sourceAmount: params.sourceAmount,
+        destinationAmount,
+        status: "failed",
+        error: errorMessage,
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt
+      };
+    }
+  }
+  getSwap(swapId) {
+    return this.swaps.get(swapId);
+  }
+  getAllSwaps() {
+    return Array.from(this.swaps.values());
+  }
+  validateSwapParams(params) {
+    if (!params.sourceAsset || !params.sourceAsset.assetCode) {
+      return { isValid: false, error: "Source asset code is required" };
+    }
+    if (!params.destinationAsset || !params.destinationAsset.assetCode) {
+      return { isValid: false, error: "Destination asset code is required" };
+    }
+    if (!params.sourceAmount || parseFloat(params.sourceAmount) <= 0) {
+      return { isValid: false, error: "Source amount must be a positive number" };
+    }
+    if (!params.destinationAddress) {
+      return { isValid: false, error: "Destination address is required" };
+    }
+    return { isValid: true };
+  }
+  buildSwapError(params, error) {
+    return {
+      success: false,
+      swapId: "",
+      sourceAsset: params.sourceAsset,
+      destinationAsset: params.destinationAsset,
+      sourceAmount: params.sourceAmount,
+      destinationAmount: "0",
+      status: "failed",
+      error,
+      createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+      updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+    };
   }
 };
 

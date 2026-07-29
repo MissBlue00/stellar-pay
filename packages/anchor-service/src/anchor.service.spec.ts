@@ -139,3 +139,29 @@ describe('AnchorService.fetchTransactionHistory', () => {
     );
   });
 });
+
+describe('AnchorService SEP-24 withdrawals', () => {
+  it('creates an interactive withdrawal and exposes its polling status', async () => {
+    const service = new AnchorService();
+
+    const result = await service.createSep24Withdrawal('USDC', '100', 'account-123');
+
+    expect(result.success).toBe(true);
+    expect(result.interactiveUrl).toContain('/withdraw/interactive');
+    expect(result.interactiveUrl).toContain('asset_code=USDC');
+    expect(result.interactiveUrl).toContain('amount=100');
+    expect(result.interactiveUrl).toContain('account=account-123');
+    expect(result.status).toBe('pending');
+
+    expect(result.id).toBeDefined();
+
+    const polled = service.pollSep24WithdrawalStatus(result.id ?? '');
+
+    expect(polled).toMatchObject({
+      id: result.id,
+      status: 'pending',
+      assetCode: 'USDC',
+      amount: '100',
+    });
+  });
+});
