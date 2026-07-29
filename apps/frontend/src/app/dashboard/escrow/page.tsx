@@ -20,7 +20,7 @@ export default function EscrowPage() {
         >
           Escrow
         </motion.h1>
-        <p className="text-sm text-neutral-400">Manage escrow accounts and conditional releases</p>
+        <p className="text-sm text-muted-foreground">Manage escrow accounts and conditional releases</p>
       </div>
 
       <div className="grid sm:grid-cols-3 gap-4 mb-8">
@@ -31,13 +31,13 @@ export default function EscrowPage() {
         ].map((stat, index) => (
           <motion.div
             key={stat.label}
-            className="p-6 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/10 rounded-xl"
+            className="p-6 bg-card border-border rounded-xl"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
           >
             <div className="text-2xl font-medium mb-1">{stat.value}</div>
-            <div className="text-xs text-neutral-500">{stat.label}</div>
+            <div className="text-xs text-muted-foreground/70">{stat.label}</div>
           </motion.div>
         ))}
       </div>
@@ -47,14 +47,14 @@ export default function EscrowPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <button className="px-4 py-3 bg-white text-black rounded-lg hover:bg-neutral-200 transition-all flex items-center gap-2 font-medium cursor-pointer">
+        <button className="px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all flex items-center gap-2 font-medium cursor-pointer">
           <Plus className="size-4" />
           Create Escrow
         </button>
       </motion.div>
 
       <motion.div
-        className="bg-gradient-to-br from-white/[0.03] to-transparent border border-white/5 rounded-xl overflow-hidden"
+        className="bg-card border-border rounded-xl overflow-hidden"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
@@ -62,21 +62,21 @@ export default function EscrowPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/5 bg-white/[0.02]">
-                <th className="text-left py-4 px-4 text-neutral-500 font-medium">Escrow ID</th>
-                <th className="text-left py-4 px-4 text-neutral-500 font-medium">Parties</th>
-                <th className="text-left py-4 px-4 text-neutral-500 font-medium">Amount</th>
-                <th className="text-left py-4 px-4 text-neutral-500 font-medium">Asset</th>
-                <th className="text-left py-4 px-4 text-neutral-500 font-medium">Condition</th>
-                <th className="text-left py-4 px-4 text-neutral-500 font-medium">Status</th>
-                <th className="text-left py-4 px-4 text-neutral-500 font-medium">Release Date</th>
+              <tr className="border-border bg-muted/20">
+                <th className="text-left py-4 px-4 text-muted-foreground/70 font-medium">Escrow ID</th>
+                <th className="text-left py-4 px-4 text-muted-foreground/70 font-medium">Parties</th>
+                <th className="text-left py-4 px-4 text-muted-foreground/70 font-medium">Amount</th>
+                <th className="text-left py-4 px-4 text-muted-foreground/70 font-medium">Asset</th>
+                <th className="text-left py-4 px-4 text-muted-foreground/70 font-medium">Condition</th>
+                <th className="text-left py-4 px-4 text-muted-foreground/70 font-medium">Status</th>
+                <th className="text-left py-4 px-4 text-muted-foreground/70 font-medium">Release Date</th>
               </tr>
             </thead>
             <tbody>
               {escrows.map((escrow, index) => (
                 <motion.tr
                   key={escrow.id}
-                  className="border-b border-white/5 hover:bg-white/[0.02] transition-colors"
+                  className="border-border hover:bg-muted/20 transition-colors"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 + index * 0.05 }}
@@ -85,9 +85,9 @@ export default function EscrowPage() {
                   <td className="py-4 px-4">{escrow.parties}</td>
                   <td className="py-4 px-4 font-medium">{escrow.amount}</td>
                   <td className="py-4 px-4">
-                    <span className="px-2 py-1 bg-white/5 rounded text-xs">{escrow.asset}</span>
+                    <span className="px-2 py-1 bg-muted rounded text-xs">{escrow.asset}</span>
                   </td>
-                  <td className="py-4 px-4 text-neutral-400 text-xs">{escrow.condition}</td>
+                  <td className="py-4 px-4 text-muted-foreground text-xs">{escrow.condition}</td>
                   <td className="py-4 px-4">
                     <span
                       className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${
@@ -108,7 +108,7 @@ export default function EscrowPage() {
                       {escrow.status}
                     </span>
                   </td>
-                  <td className="py-4 px-4 text-neutral-400">{escrow.releaseDate}</td>
+                  <td className="py-4 px-4 text-muted-foreground">{escrow.releaseDate}</td>
                 </motion.tr>
               ))}
             </tbody>

@@ -117,7 +117,7 @@ export default function OverviewPage() {
         >
           Overview
         </motion.h1>
-        <p className="text-sm text-neutral-400">Real-time metrics and settlement status</p>
+        <p className="text-sm text-muted-foreground">Real-time metrics and settlement status</p>
       </div>
 
       {/* Stats Grid */}
@@ -126,14 +126,14 @@ export default function OverviewPage() {
         {stats.map((stat, index) => (
           <motion.div
             key={stat.label}
-            className="p-6 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/10 rounded-xl relative overflow-hidden group"
+            className="p-6 bg-card border-border rounded-xl relative overflow-hidden group"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
             whileHover={{ y: -4, transition: { duration: 0.2 } }}
           >
             <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-white/5 via-white/10 to-white/5 opacity-0 group-hover:opacity-100"
+              className="absolute inset-0 bg-gradient-to-r from-foreground/[0.03] via-foreground/[0.06] to-foreground/[0.03] opacity-0 group-hover:opacity-100"
               animate={{
                 x: ['-100%', '200%'],
               }}
@@ -145,8 +145,8 @@ export default function OverviewPage() {
             />
 
             <div className="flex items-start justify-between mb-4 relative z-10">
-              <div className="p-2 bg-white/5 rounded-lg">
-                <stat.icon className="size-5 text-white" />
+              <div className="p-2 bg-muted rounded-lg">
+                <stat.icon className="size-5 text-foreground" />
               </div>
               <div
                 className={`flex items-center gap-1 text-xs ${
@@ -164,7 +164,7 @@ export default function OverviewPage() {
 
             <div className="relative z-10">
               <div className="text-2xl sm:text-3xl font-medium mb-1">{stat.value}</div>
-              <div className="text-xs text-neutral-500">{stat.label}</div>
+              <div className="text-xs text-muted-foreground/70">{stat.label}</div>
             </div>
           </motion.div>
         ))}
@@ -175,14 +175,14 @@ export default function OverviewPage() {
       <div className="grid lg:grid-cols-3 gap-6 mb-8">
         {/* Asset Balances */}
         <motion.div
-          className="lg:col-span-2 p-6 bg-gradient-to-br from-white/[0.03] to-transparent border border-white/5 rounded-xl"
+          className="lg:col-span-2 p-6 bg-card border-border rounded-xl"
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3 }}
         >
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-medium">Settlement Balance by Asset</h2>
-            <button className="text-xs text-neutral-400 hover:text-white transition-colors flex items-center gap-1 cursor-pointer">
+            <button className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 cursor-pointer">
               View all <ArrowUpRight className="size-3" />
             </button>
           </div>
@@ -191,7 +191,7 @@ export default function OverviewPage() {
             {assets.map((asset, index) => (
               <motion.div
                 key={asset.symbol}
-                className="p-4 bg-white/[0.02] border border-white/5 rounded-lg hover:border-white/10 transition-all"
+                className="p-4 bg-muted/30 border-border rounded-lg hover:border-foreground/10 transition-all"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.4 + index * 0.1 }}
@@ -199,12 +199,12 @@ export default function OverviewPage() {
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-white/20 to-white/10 flex items-center justify-center font-medium text-sm">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-foreground/10 to-foreground/5 flex items-center justify-center font-medium text-sm">
                       {asset.symbol.slice(0, 2)}
                     </div>
                     <div>
                       <div className="font-medium">{asset.symbol}</div>
-                      <div className="text-sm text-neutral-500">{asset.balance}</div>
+                      <div className="text-sm text-muted-foreground/70">{asset.balance}</div>
                     </div>
                   </div>
                   <div className="text-right">
@@ -218,9 +218,9 @@ export default function OverviewPage() {
                 </div>
 
                 {/* Mini bar chart */}
-                <div className="mt-3 h-1 bg-white/5 rounded-full overflow-hidden">
+                <div className="mt-3 h-1 bg-muted rounded-full overflow-hidden">
                   <motion.div
-                    className="h-full bg-gradient-to-r from-white/30 to-white/10"
+                    className="h-full bg-gradient-to-r from-foreground/20 to-foreground/10"
                     initial={{ width: 0 }}
                     animate={{ width: `${assetWidths[index]}%` }}
                     transition={{ duration: 1, delay: 0.5 + index * 0.1 }}
@@ -233,7 +233,7 @@ export default function OverviewPage() {
 
         {/* Reserve Ratio Gauge */}
         <motion.div
-          className="p-6 bg-gradient-to-br from-white/[0.03] to-transparent border border-white/5 rounded-xl"
+          className="p-6 bg-card border-border rounded-xl"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3 }}
@@ -267,22 +267,22 @@ export default function OverviewPage() {
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <div className="text-3xl font-medium">127.3%</div>
-                <div className="text-xs text-neutral-500">Ratio</div>
+                <div className="text-xs text-muted-foreground/70">Ratio</div>
               </div>
             </div>
           </div>
 
           <div className="space-y-3">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-neutral-500">Target</span>
+              <span className="text-muted-foreground/70">Target</span>
               <span className="font-medium">120%</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-neutral-500">Minimum</span>
+              <span className="text-muted-foreground/70">Minimum</span>
               <span className="font-medium">100%</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-neutral-500">Status</span>
+              <span className="text-muted-foreground/70">Status</span>
               <span className="text-green-400 flex items-center gap-1">
                 <CheckCircle2 className="size-3" /> Healthy
               </span>
@@ -295,7 +295,7 @@ export default function OverviewPage() {
       <ErrorBoundary name="Transaction Feed">
       {/* Real-time Transaction Feed */}
       <motion.div
-        className="p-6 bg-gradient-to-br from-white/[0.03] to-transparent border border-white/5 rounded-xl"
+        className="p-6 bg-card border-border rounded-xl"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
@@ -315,7 +315,7 @@ export default function OverviewPage() {
               }}
             />
           </div>
-          <button className="text-xs text-neutral-400 hover:text-white transition-colors flex items-center gap-1 cursor-pointer">
+          <button className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 cursor-pointer">
             View all <ArrowUpRight className="size-3" />
           </button>
         </div>
@@ -323,29 +323,29 @@ export default function OverviewPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/5">
-                <th className="text-left py-3 px-4 text-neutral-500 font-medium">ID</th>
-                <th className="text-left py-3 px-4 text-neutral-500 font-medium">Type</th>
-                <th className="text-left py-3 px-4 text-neutral-500 font-medium">Asset</th>
-                <th className="text-left py-3 px-4 text-neutral-500 font-medium">Amount</th>
-                <th className="text-left py-3 px-4 text-neutral-500 font-medium">Status</th>
-                <th className="text-left py-3 px-4 text-neutral-500 font-medium">Time</th>
-                <th className="text-left py-3 px-4 text-neutral-500 font-medium">Hash</th>
+              <tr className="border-border">
+                <th className="text-left py-3 px-4 text-muted-foreground/70 font-medium">ID</th>
+                <th className="text-left py-3 px-4 text-muted-foreground/70 font-medium">Type</th>
+                <th className="text-left py-3 px-4 text-muted-foreground/70 font-medium">Asset</th>
+                <th className="text-left py-3 px-4 text-muted-foreground/70 font-medium">Amount</th>
+                <th className="text-left py-3 px-4 text-muted-foreground/70 font-medium">Status</th>
+                <th className="text-left py-3 px-4 text-muted-foreground/70 font-medium">Time</th>
+                <th className="text-left py-3 px-4 text-muted-foreground/70 font-medium">Hash</th>
               </tr>
             </thead>
             <tbody>
               {transactions.map((tx, index) => (
                 <motion.tr
                   key={tx.id}
-                  className="border-b border-white/5 hover:bg-white/[0.02] transition-colors"
+                  className="border-border hover:bg-muted/20 transition-colors"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.6 + index * 0.05 }}
                 >
-                  <td className="py-3 px-4 font-mono text-xs text-neutral-400">{tx.id}</td>
+                  <td className="py-3 px-4 font-mono text-xs text-muted-foreground">{tx.id}</td>
                   <td className="py-3 px-4">{tx.type}</td>
                   <td className="py-3 px-4">
-                    <span className="px-2 py-1 bg-white/5 rounded text-xs font-medium">
+                    <span className="px-2 py-1 bg-muted rounded text-xs font-medium">
                       {tx.asset}
                     </span>
                   </td>
@@ -370,9 +370,9 @@ export default function OverviewPage() {
                       {tx.status}
                     </span>
                   </td>
-                  <td className="py-3 px-4 text-neutral-400">{tx.time}</td>
+                  <td className="py-3 px-4 text-muted-foreground">{tx.time}</td>
                   <td className="py-3 px-4">
-                    <button className="font-mono text-xs text-neutral-500 hover:text-white transition-colors cursor-pointer">
+                    <button className="font-mono text-xs text-muted-foreground/70 hover:text-foreground transition-colors cursor-pointer">
                       {tx.hash}
                     </button>
                   </td>

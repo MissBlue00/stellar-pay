@@ -68,7 +68,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-black px-6 py-12">
+    <div className="flex min-h-screen items-center justify-center bg-background px-6 py-12">
       <Toaster />
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -76,11 +76,11 @@ export default function LoginPage() {
         transition={{ duration: 0.5, ease: 'easeOut' }}
         className="w-full max-w-md"
       >
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-8 shadow-2xl shadow-black/50">
+        <div className="rounded-2xl border-border bg-card p-8 shadow-2xl shadow-black/50">
           <div className="mb-8 text-center">
-            <p className="text-sm uppercase tracking-[0.3em] text-neutral-400">StellarPay</p>
-            <h1 className="mt-3 text-3xl font-semibold text-white">Sign in</h1>
-            <p className="mt-2 text-sm text-neutral-400">Access your merchant dashboard.</p>
+            <p className="text-sm uppercase tracking-[0.3em] text-muted-foreground">StellarPay</p>
+            <h1 className="mt-3 text-3xl font-semibold text-foreground">Sign in</h1>
+            <p className="mt-2 text-sm text-muted-foreground">Access your merchant dashboard.</p>
           </div>
 
           {apiError && (
@@ -95,16 +95,16 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-neutral-300">
+              <Label htmlFor="email" className="text-muted-foreground">
                 Email
               </Label>
               <div className="relative">
-                <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-neutral-500" />
+                <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/70" />
                 <Input
                   id="email"
                   type="email"
                   placeholder="merchant@example.com"
-                  className="border-white/10 bg-black/40 pl-10 text-white placeholder:text-neutral-600"
+                  className="border-border bg-muted pl-10 text-foreground placeholder:text-muted-foreground"
                   {...register('email')}
                 />
               </div>
@@ -112,22 +112,22 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-neutral-300">
+              <Label htmlFor="password" className="text-muted-foreground">
                 Password
               </Label>
               <div className="relative">
-                <Lock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-neutral-500" />
+                <Lock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/70" />
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Enter your password"
-                  className="border-white/10 bg-black/40 pl-10 pr-10 text-white placeholder:text-neutral-600"
+                  className="border-border bg-muted pl-10 pr-10 text-foreground placeholder:text-muted-foreground"
                   {...register('password')}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/70 hover:text-muted-foreground"
                   tabIndex={-1}
                 >
                   {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
@@ -139,7 +139,7 @@ export default function LoginPage() {
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-white py-6 text-sm font-semibold text-black transition hover:bg-neutral-200 disabled:opacity-50"
+              className="w-full bg-primary py-6 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"
             >
               {isSubmitting ? (
                 <span className="flex items-center gap-2">
@@ -152,11 +152,11 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <p className="mt-8 text-center text-sm text-neutral-500">
+          <p className="mt-8 text-center text-sm text-muted-foreground/70">
             Don&apos;t have an account?{' '}
             <Link
               href="/register"
-              className="font-medium text-white underline-offset-4 hover:underline"
+              className="font-medium text-foreground underline-offset-4 hover:underline"
             >
               Create one
             </Link>

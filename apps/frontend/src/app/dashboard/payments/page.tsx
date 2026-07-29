@@ -99,7 +99,7 @@ export default function PaymentsPage() {
         >
           Payments
         </motion.h1>
-        <p className="text-sm text-neutral-400">Track and manage all payment transactions</p>
+        <p className="text-sm text-muted-foreground">Track and manage all payment transactions</p>
       </div>
 
       {/* Filters */}
@@ -109,20 +109,20 @@ export default function PaymentsPage() {
         animate={{ opacity: 1, y: 0 }}
       >
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-neutral-500" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-muted-foreground/70" />
           <input
             type="text"
             placeholder="Search by ID, reference, or currency..."
             value={searchQuery}
             onChange={(e) => handleSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-lg text-sm focus:outline-none focus:border-white/20 transition-colors"
+            className="w-full pl-10 pr-4 py-3 bg-muted border-border rounded-lg text-sm focus:outline-none focus:border-white/20 transition-colors"
           />
         </div>
-        <button className="px-4 py-3 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-all flex items-center justify-center gap-2 cursor-pointer">
+        <button className="px-4 py-3 bg-muted border-border rounded-lg hover:bg-accent transition-all flex items-center justify-center gap-2 cursor-pointer">
           <Filter className="size-4" />
           <span className="text-sm">Filters</span>
         </button>
-        <button className="px-4 py-3 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-all flex items-center justify-center gap-2 cursor-pointer">
+        <button className="px-4 py-3 bg-muted border-border rounded-lg hover:bg-accent transition-all flex items-center justify-center gap-2 cursor-pointer">
           <Download className="size-4" />
           <span className="text-sm">Export</span>
         </button>
@@ -138,7 +138,7 @@ export default function PaymentsPage() {
         ].map((stat, index) => (
           <motion.div
             key={stat.label}
-            className="p-4 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/10 rounded-lg"
+            className="p-4 bg-card border-border rounded-lg"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
@@ -150,7 +150,7 @@ export default function PaymentsPage() {
                 stat.value.toLocaleString()
               )}
             </div>
-            <div className="text-xs text-neutral-500">{stat.label}</div>
+            <div className="text-xs text-muted-foreground/70">{stat.label}</div>
           </motion.div>
         ))}
       </div>
@@ -175,7 +175,7 @@ export default function PaymentsPage() {
 
       {/* Payments Table */}
       <motion.div
-        className="bg-gradient-to-br from-white/[0.03] to-transparent border border-white/5 rounded-xl overflow-hidden"
+        className="bg-card border-border rounded-xl overflow-hidden"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
@@ -183,24 +183,24 @@ export default function PaymentsPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/5 bg-white/[0.02]">
-                <th className="text-left py-4 px-4 text-neutral-500 font-medium whitespace-nowrap">
+              <tr className="border-border bg-muted/20">
+                <th className="text-left py-4 px-4 text-muted-foreground/70 font-medium whitespace-nowrap">
                   Payment ID
                 </th>
-                <th className="text-left py-4 px-4 text-neutral-500 font-medium whitespace-nowrap">
+                <th className="text-left py-4 px-4 text-muted-foreground/70 font-medium whitespace-nowrap">
                   Date & Time
                 </th>
-                <th className="text-left py-4 px-4 text-neutral-500 font-medium">Asset</th>
-                <th className="text-left py-4 px-4 text-neutral-500 font-medium">Amount</th>
-                <th className="text-left py-4 px-4 text-neutral-500 font-medium">Status</th>
-                <th className="text-left py-4 px-4 text-neutral-500 font-medium">Reference</th>
-                <th className="text-left py-4 px-4 text-neutral-500 font-medium">Actions</th>
+                <th className="text-left py-4 px-4 text-muted-foreground/70 font-medium">Asset</th>
+                <th className="text-left py-4 px-4 text-muted-foreground/70 font-medium">Amount</th>
+                <th className="text-left py-4 px-4 text-muted-foreground/70 font-medium">Status</th>
+                <th className="text-left py-4 px-4 text-muted-foreground/70 font-medium">Reference</th>
+                <th className="text-left py-4 px-4 text-muted-foreground/70 font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 Array.from({ length: limit }).map((_, i) => (
-                  <tr key={`skeleton-${i}`} className="border-b border-white/5">
+                  <tr key={`skeleton-${i}`} className="border-b border-border">
                     <td className="py-4 px-4">
                       <Skeleton className="h-4 w-32" />
                     </td>
@@ -243,7 +243,7 @@ export default function PaymentsPage() {
                 payments.map((payment, index) => (
                   <motion.tr
                     key={payment.id}
-                    className="border-b border-white/5 hover:bg-white/[0.02] transition-colors"
+                    className="border-border hover:bg-muted/20 transition-colors"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.05 * index }}
@@ -251,11 +251,11 @@ export default function PaymentsPage() {
                     <td className="py-4 px-4">
                       <div className="font-mono text-xs">{payment.paymentReference}</div>
                     </td>
-                    <td className="py-4 px-4 text-neutral-400 whitespace-nowrap">
+                    <td className="py-4 px-4 text-muted-foreground whitespace-nowrap">
                       {new Date(payment.createdAt).toLocaleString()}
                     </td>
                     <td className="py-4 px-4">
-                      <span className="px-2 py-1 bg-white/5 rounded text-xs font-medium">
+                      <span className="px-2 py-1 bg-muted rounded text-xs font-medium">
                         {payment.currency}
                       </span>
                     </td>
@@ -282,11 +282,11 @@ export default function PaymentsPage() {
                         {payment.status}
                       </span>
                     </td>
-                    <td className="py-4 px-4 text-neutral-400 text-xs">
+                    <td className="py-4 px-4 text-muted-foreground text-xs">
                       {payment.reference ?? '—'}
                     </td>
                     <td className="py-4 px-4">
-                      <button className="text-white hover:text-neutral-400 transition-colors cursor-pointer">
+                      <button className="text-foreground hover:text-muted-foreground transition-colors cursor-pointer">
                         <ArrowUpRight className="size-4" />
                       </button>
                     </td>
@@ -299,7 +299,7 @@ export default function PaymentsPage() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="border-t border-white/5 py-4 px-4">
+          <div className="border-t border-border py-4 px-4">
             <Pagination>
               <PaginationContent>
                 <PaginationItem>
@@ -322,7 +322,7 @@ export default function PaymentsPage() {
                   .map((item, i) =>
                     item === 'ellipsis' ? (
                       <PaginationItem key={`ellipsis-${i}`}>
-                        <span className="flex size-9 items justify-center text-neutral-500">
+                        <span className="flex size-9 items justify-center text-muted-foreground/70">
                           ...
                         </span>
                       </PaginationItem>

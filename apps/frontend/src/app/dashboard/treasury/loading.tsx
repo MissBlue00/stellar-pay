@@ -12,7 +12,7 @@ export default function TreasuryLoading() {
         {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}
-            className="p-6 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/10 rounded-xl"
+            className="p-6 bg-card border-border rounded-xl"
           >
             <Skeleton className="h-10 w-10 rounded-lg mb-4" />
             <Skeleton className="h-8 w-32 mb-1" />
@@ -21,11 +21,11 @@ export default function TreasuryLoading() {
         ))}
       </div>
 
-      <div className="mb-8 p-6 bg-gradient-to-br from-white/[0.03] to-transparent border border-white/5 rounded-xl">
+      <div className="mb-8 p-6 bg-card border-border rounded-xl">
         <Skeleton className="h-6 w-36 mb-6" />
         <div className="space-y-4">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="p-6 bg-white/[0.02] border border-white/5 rounded-lg">
+            <div key={i} className="p-6 bg-muted/30 border-border rounded-lg">
               <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div>
                   <Skeleton className="h-12 w-32" />
@@ -50,11 +50,11 @@ export default function TreasuryLoading() {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
-        <div className="p-6 bg-gradient-to-br from-white/[0.03] to-transparent border border-white/5 rounded-xl">
+        <div className="p-6 bg-card border-border rounded-xl">
           <Skeleton className="h-6 w-44 mb-6" />
           <div className="space-y-3">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="p-4 bg-white/[0.02] border border-white/5 rounded-lg">
+              <div key={i} className="p-4 bg-muted/30 border-border rounded-lg">
                 <div className="flex items-center justify-between mb-2">
                   <Skeleton className="h-5 w-16 rounded" />
                   <Skeleton className="h-4 w-24" />
@@ -68,7 +68,7 @@ export default function TreasuryLoading() {
           </div>
         </div>
 
-        <div className="p-6 bg-gradient-to-br from-white/[0.03] to-transparent border border-white/5 rounded-xl">
+        <div className="p-6 bg-card border-border rounded-xl">
           <Skeleton className="h-6 w-44 mb-6" />
           <div className="space-y-6">
             {Array.from({ length: 3 }).map((_, i) => (

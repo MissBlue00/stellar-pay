@@ -12,7 +12,7 @@ export default function OverviewLoading() {
         {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}
-            className="p-6 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/10 rounded-xl"
+            className="p-6 bg-card border-border rounded-xl"
           >
             <Skeleton className="h-10 w-10 rounded-lg mb-4" />
             <Skeleton className="h-8 w-32 mb-1" />
@@ -22,14 +22,14 @@ export default function OverviewLoading() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6 mb-8">
-        <div className="lg:col-span-2 p-6 bg-gradient-to-br from-white/[0.03] to-transparent border border-white/5 rounded-xl">
+        <div className="lg:col-span-2 p-6 bg-card border-border rounded-xl">
           <div className="flex items-center justify-between mb-6">
             <Skeleton className="h-6 w-48" />
             <Skeleton className="h-4 w-16" />
           </div>
           <div className="space-y-4">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="p-4 bg-white/[0.02] border border-white/5 rounded-lg">
+              <div key={i} className="p-4 bg-muted/30 border-border rounded-lg">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <Skeleton className="h-10 w-10 rounded-full" />
@@ -49,7 +49,7 @@ export default function OverviewLoading() {
           </div>
         </div>
 
-        <div className="p-6 bg-gradient-to-br from-white/[0.03] to-transparent border border-white/5 rounded-xl">
+        <div className="p-6 bg-card border-border rounded-xl">
           <Skeleton className="h-6 w-32 mb-6" />
           <div className="flex items-center justify-center mb-6">
             <Skeleton className="h-40 w-40 rounded-full" />
@@ -65,7 +65,7 @@ export default function OverviewLoading() {
         </div>
       </div>
 
-      <div className="p-6 bg-gradient-to-br from-white/[0.03] to-transparent border border-white/5 rounded-xl">
+      <div className="p-6 bg-card border-border rounded-xl">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
             <Skeleton className="h-6 w-52" />
@@ -76,7 +76,7 @@ export default function OverviewLoading() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/5">
+              <tr className="border-b border-border">
                 {Array.from({ length: 7 }).map((_, i) => (
                   <th key={i} className="py-3 px-4">
                     <Skeleton className="h-4 w-16" />
@@ -86,7 +86,7 @@ export default function OverviewLoading() {
             </thead>
             <tbody>
               {Array.from({ length: 5 }).map((_, i) => (
-                <tr key={i} className="border-b border-white/5">
+                <tr key={i} className="border-b border-border">
                   {Array.from({ length: 7 }).map((_, j) => (
                     <td key={j} className="py-3 px-4">
                       <Skeleton className="h-4 w-20" />

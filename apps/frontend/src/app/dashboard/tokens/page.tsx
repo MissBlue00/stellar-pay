@@ -24,14 +24,14 @@ export default function TokenWhitelistPage() {
   ) : tokens.map((token, index) => (
     <motion.tr
       key={token.symbol}
-      className="border-b border-white/5 hover:bg-white/[0.02] transition-colors"
+      className="border-border hover:bg-muted/20 transition-colors"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3 + index * 0.05 }}
     >
       <td className="py-4 px-4">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-white/20 to-white/10 flex items-center justify-center font-medium text-xs">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-foreground/10 to-foreground/5 flex items-center justify-center font-medium text-xs">
             {token.symbol.slice(0, 2)}
           </div>
           <span className="font-medium">{token.symbol}</span>
@@ -42,9 +42,9 @@ export default function TokenWhitelistPage() {
           {token.enabled ? (
             <ToggleRight className="size-6 text-green-400" />
           ) : (
-            <ToggleLeft className="size-6 text-neutral-500" />
+            <ToggleLeft className="size-6 text-muted-foreground/70" />
           )}
-          <span className={token.enabled ? "text-green-400" : "text-neutral-500"}>
+          <span className={token.enabled ? "text-green-400" : "text-muted-foreground/70"}>
             {token.enabled ? "Enabled" : "Disabled"}
           </span>
         </button>
@@ -54,14 +54,14 @@ export default function TokenWhitelistPage() {
           {token.autoConvert ? (
             <ToggleRight className="size-6 text-green-400" />
           ) : (
-            <ToggleLeft className="size-6 text-neutral-500" />
+            <ToggleLeft className="size-6 text-muted-foreground/70" />
           )}
         </button>
       </td>
-      <td className="py-4 px-4 font-mono text-neutral-400">{token.minAmount}</td>
-      <td className="py-4 px-4 font-mono text-neutral-400">{token.maxAmount}</td>
+      <td className="py-4 px-4 font-mono text-muted-foreground">{token.minAmount}</td>
+      <td className="py-4 px-4 font-mono text-muted-foreground">{token.maxAmount}</td>
       <td className="py-4 px-4">
-        <button className="p-2 hover:bg-white/5 rounded-lg transition-colors cursor-pointer">
+        <button className="p-2 hover:bg-accent rounded-lg transition-colors cursor-pointer">
           <Settings className="size-4" />
         </button>
       </td>
@@ -77,7 +77,7 @@ export default function TokenWhitelistPage() {
         >
           Token Whitelist
         </motion.h1>
-        <p className="text-sm text-neutral-400">Configure accepted tokens and conversion rules</p>
+        <p className="text-sm text-muted-foreground">Configure accepted tokens and conversion rules</p>
       </div>
 
       <motion.div
@@ -85,14 +85,14 @@ export default function TokenWhitelistPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <button className="px-4 py-3 bg-white text-black rounded-lg hover:bg-neutral-200 transition-all flex items-center gap-2 font-medium cursor-pointer">
+        <button className="px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all flex items-center gap-2 font-medium cursor-pointer">
           <Plus className="size-4" />
           Add Token
         </button>
       </motion.div>
 
       <motion.div
-        className="bg-gradient-to-br from-white/[0.03] to-transparent border border-white/5 rounded-xl overflow-hidden"
+        className="bg-card border-border rounded-xl overflow-hidden"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
@@ -100,13 +100,13 @@ export default function TokenWhitelistPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/5 bg-white/[0.02]">
-                <th className="text-left py-4 px-4 text-neutral-500 font-medium">Token</th>
-                <th className="text-left py-4 px-4 text-neutral-500 font-medium">Status</th>
-                <th className="text-left py-4 px-4 text-neutral-500 font-medium">Auto-Convert</th>
-                <th className="text-left py-4 px-4 text-neutral-500 font-medium">Min Amount</th>
-                <th className="text-left py-4 px-4 text-neutral-500 font-medium">Max Amount</th>
-                <th className="text-left py-4 px-4 text-neutral-500 font-medium">Actions</th>
+              <tr className="border-border bg-muted/20">
+                <th className="text-left py-4 px-4 text-muted-foreground/70 font-medium">Token</th>
+                <th className="text-left py-4 px-4 text-muted-foreground/70 font-medium">Status</th>
+                <th className="text-left py-4 px-4 text-muted-foreground/70 font-medium">Auto-Convert</th>
+                <th className="text-left py-4 px-4 text-muted-foreground/70 font-medium">Min Amount</th>
+                <th className="text-left py-4 px-4 text-muted-foreground/70 font-medium">Max Amount</th>
+                <th className="text-left py-4 px-4 text-muted-foreground/70 font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>

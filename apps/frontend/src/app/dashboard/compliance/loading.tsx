@@ -12,7 +12,7 @@ export default function ComplianceLoading() {
         {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}
-            className="p-6 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/10 rounded-xl"
+            className="p-6 bg-card border-border rounded-xl"
           >
             <div className="flex items-center gap-3 mb-4">
               <Skeleton className="h-9 w-9 rounded-lg" />
@@ -24,11 +24,11 @@ export default function ComplianceLoading() {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
-        <div className="p-6 bg-gradient-to-br from-white/[0.03] to-transparent border border-white/5 rounded-xl">
+        <div className="p-6 bg-card border-border rounded-xl">
           <Skeleton className="h-6 w-44 mb-6" />
           <div className="space-y-4">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="p-4 bg-white/[0.02] border border-white/5 rounded-lg">
+              <div key={i} className="p-4 bg-muted/30 border-border rounded-lg">
                 <div className="flex items-center justify-between">
                   <div>
                     <Skeleton className="h-5 w-36 mb-1" />
@@ -42,11 +42,11 @@ export default function ComplianceLoading() {
           <Skeleton className="h-11 w-full mt-6 rounded-lg" />
         </div>
 
-        <div className="p-6 bg-gradient-to-br from-white/[0.03] to-transparent border border-white/5 rounded-xl">
+        <div className="p-6 bg-card border-border rounded-xl">
           <Skeleton className="h-6 w-44 mb-6" />
           <div className="space-y-6">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="pb-4 border-b border-white/5 last:border-0">
+              <div key={i} className="pb-4 border-b border-border last:border-0">
                 <div className="flex items-center justify-between mb-2">
                   <Skeleton className="h-4 w-32" />
                   <Skeleton className="h-6 w-16" />

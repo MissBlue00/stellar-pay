@@ -22,6 +22,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { ThemeToggle } from '@/app/components/theme-toggle';
 
 const navigation = [
   { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
@@ -57,23 +58,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Mobile menu button */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-xl border-b border-white/5 px-4 py-3">
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="font-medium">StellarPay Rails</div>
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
-          >
-            {sidebarOpen ? <X className="size-5" /> : <Menu className="size-5" />}
-          </button>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-2 hover:bg-accent rounded-lg transition-colors cursor-pointer"
+            >
+              {sidebarOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Sidebar */}
       <motion.aside
-        className={`fixed top-0 left-0 bottom-0 w-64 bg-black border-r border-white/5 flex flex-col z-40 ${
+        className={`fixed top-0 left-0 bottom-0 w-64 bg-sidebar border-r border-sidebar-border flex flex-col z-40 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } lg:translate-x-0 transition-transform duration-300`}
         initial={{ x: -256 }}
@@ -81,13 +85,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         transition={{ duration: 0.3 }}
       >
         {/* Logo */}
-        <div className="h-16 flex items-center px-6 border-b border-white/5">
+        <div className="h-16 flex items-center justify-between px-6 border-b border-sidebar-border">
           <Link
             href="/"
-            className="font-medium text-lg hover:text-neutral-400 transition-colors cursor-pointer"
+            className="font-medium text-lg hover:text-muted-foreground transition-colors cursor-pointer"
           >
             StellarPay Rails
           </Link>
+          <ThemeToggle />
         </div>
 
         {/* Navigation */}
@@ -105,8 +110,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <motion.div
                     className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all ${
                       isActive
-                        ? 'bg-white/10 text-white'
-                        : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                        ? 'bg-accent text-accent-foreground'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                     }`}
                     whileHover={{ x: 4 }}
                     whileTap={{ scale: 0.98 }}
@@ -126,8 +131,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-white/5">
-          <div className="text-xs text-neutral-500">
+        <div className="p-4 border-t border-sidebar-border">
+          <div className="text-xs text-muted-foreground/70">
             <div className="mb-1">
               API Status: <span className="text-green-400">Operational</span>
             </div>
@@ -150,7 +155,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-30"
+          className="lg:hidden fixed inset-0 bg-background/80 backdrop-blur-sm z-30"
           onClick={() => setSidebarOpen(false)}
         />
       )}

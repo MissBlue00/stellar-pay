@@ -32,7 +32,7 @@ export default function ApiKeysPage() {
         >
           API Keys
         </motion.h1>
-        <p className="text-sm text-neutral-400">Manage authentication credentials for API access</p>
+        <p className="text-sm text-muted-foreground">Manage authentication credentials for API access</p>
       </div>
 
       <motion.div
@@ -44,7 +44,7 @@ export default function ApiKeysPage() {
           <Eye className="size-5 text-yellow-400 mt-0.5" />
           <div>
             <div className="font-medium text-yellow-400 mb-1">Keep your keys secure</div>
-            <div className="text-sm text-neutral-400">
+            <div className="text-sm text-muted-foreground">
               Never share your API keys in publicly accessible areas such as GitHub, client-side code, or logging systems.
             </div>
           </div>
@@ -56,14 +56,14 @@ export default function ApiKeysPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <button className="px-4 py-3 bg-white text-black rounded-lg hover:bg-neutral-200 transition-all flex items-center gap-2 font-medium cursor-pointer">
+        <button className="px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all flex items-center gap-2 font-medium cursor-pointer">
           <Plus className="size-4" />
           Generate New Key
         </button>
       </motion.div>
 
       <motion.div
-        className="bg-gradient-to-br from-white/[0.03] to-transparent border border-white/5 rounded-xl overflow-hidden"
+        className="bg-card border-border rounded-xl overflow-hidden"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
@@ -72,7 +72,7 @@ export default function ApiKeysPage() {
           {apiKeys.map((key, index) => (
             <motion.div
               key={key.id}
-              className="p-6 bg-white/[0.02] border border-white/5 rounded-lg hover:border-white/10 transition-all"
+              className="p-6 bg-muted/30 border-border rounded-lg hover:border-foreground/10 transition-all"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 + index * 0.05 }}
@@ -81,40 +81,40 @@ export default function ApiKeysPage() {
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="font-medium">{key.name}</div>
-                    <span className="px-2 py-1 bg-white/5 rounded text-xs">{key.permissions}</span>
+                    <span className="px-2 py-1 bg-muted rounded text-xs">{key.permissions}</span>
                   </div>
                   
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="font-mono text-sm bg-black border border-white/10 rounded px-3 py-2 flex-1">
+                    <div className="font-mono text-sm bg-background border-border rounded px-3 py-2 flex-1">
                       {visibleKeys.has(key.id) ? key.id : "sk_" + "•".repeat(20)}
                     </div>
                     <button
                       onClick={() => toggleKeyVisibility(key.id)}
-                      className="p-2 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
+                      className="p-2 hover:bg-accent rounded-lg transition-colors cursor-pointer"
                       title={visibleKeys.has(key.id) ? "Hide" : "Show"}
                     >
                       {visibleKeys.has(key.id) ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                     </button>
                     <button
-                      className="p-2 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
+                      className="p-2 hover:bg-accent rounded-lg transition-colors cursor-pointer"
                       title="Copy"
                     >
                       <Copy className="size-4" />
                     </button>
                   </div>
 
-                  <div className="grid sm:grid-cols-2 gap-4 text-xs text-neutral-400">
+                  <div className="grid sm:grid-cols-2 gap-4 text-xs text-muted-foreground">
                     <div>
-                      <span className="text-neutral-500">Created:</span> {key.created}
+                      <span className="text-muted-foreground/70">Created:</span> {key.created}
                     </div>
                     <div>
-                      <span className="text-neutral-500">Last used:</span> {key.lastUsed}
+                      <span className="text-muted-foreground/70">Last used:</span> {key.lastUsed}
                     </div>
                   </div>
                 </div>
 
                 <div className="flex gap-2">
-                  <button className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-all text-sm cursor-pointer">
+                  <button className="px-4 py-2 bg-muted border-border rounded-lg hover:bg-accent transition-all text-sm cursor-pointer">
                     Rotate
                   </button>
                   <button className="p-2 hover:bg-red-400/10 rounded-lg transition-colors text-red-400 cursor-pointer">

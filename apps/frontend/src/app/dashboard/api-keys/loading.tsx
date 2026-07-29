@@ -22,10 +22,10 @@ export default function ApiKeysLoading() {
         <Skeleton className="h-11 w-44 rounded-lg" />
       </div>
 
-      <div className="bg-gradient-to-br from-white/[0.03] to-transparent border border-white/5 rounded-xl overflow-hidden">
+      <div className="bg-card border-border rounded-xl overflow-hidden">
         <div className="space-y-4 p-6">
           {Array.from({ length: 2 }).map((_, i) => (
-            <div key={i} className="p-6 bg-white/[0.02] border border-white/5 rounded-lg">
+            <div key={i} className="p-6 bg-muted/30 border-border rounded-lg">
               <div className="flex flex-col lg:flex-row lg:items-center gap-6">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-3">

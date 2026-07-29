@@ -45,7 +45,7 @@ export default function WebhooksPage() {
         >
           Webhooks
         </motion.h1>
-        <p className="text-sm text-neutral-400">
+        <p className="text-sm text-muted-foreground">
           Configure event notifications with on-chain proof
         </p>
       </div>
@@ -58,26 +58,26 @@ export default function WebhooksPage() {
         ].map((stat, index) => (
           <motion.div
             key={stat.label}
-            className="p-6 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/10 rounded-xl"
+            className="p-6 bg-card border-border rounded-xl"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
           >
             <div className="text-2xl font-medium mb-1">{stat.value}</div>
-            <div className="text-xs text-neutral-500">{stat.label}</div>
+            <div className="text-xs text-muted-foreground/70">{stat.label}</div>
           </motion.div>
         ))}
       </div>
 
       <motion.div className="mb-6" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <button className="px-4 py-3 bg-white text-black rounded-lg hover:bg-neutral-200 transition-all flex items-center gap-2 font-medium cursor-pointer">
+        <button className="px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all flex items-center gap-2 font-medium cursor-pointer">
           <Plus className="size-4" />
           Add Webhook
         </button>
       </motion.div>
 
       <motion.div
-        className="bg-gradient-to-br from-white/[0.03] to-transparent border border-white/5 rounded-xl overflow-hidden"
+        className="bg-card border-border rounded-xl overflow-hidden"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
@@ -85,13 +85,13 @@ export default function WebhooksPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/5 bg-white/[0.02]">
-                <th className="text-left py-4 px-4 text-neutral-500 font-medium">Webhook ID</th>
-                <th className="text-left py-4 px-4 text-neutral-500 font-medium">Endpoint</th>
-                <th className="text-left py-4 px-4 text-neutral-500 font-medium">Events</th>
-                <th className="text-left py-4 px-4 text-neutral-500 font-medium">Status</th>
-                <th className="text-left py-4 px-4 text-neutral-500 font-medium">Last Triggered</th>
-                <th className="text-left py-4 px-4 text-neutral-500 font-medium">Proof Hash</th>
+              <tr className="border-border bg-muted/20">
+                <th className="text-left py-4 px-4 text-muted-foreground/70 font-medium">Webhook ID</th>
+                <th className="text-left py-4 px-4 text-muted-foreground/70 font-medium">Endpoint</th>
+                <th className="text-left py-4 px-4 text-muted-foreground/70 font-medium">Events</th>
+                <th className="text-left py-4 px-4 text-muted-foreground/70 font-medium">Status</th>
+                <th className="text-left py-4 px-4 text-muted-foreground/70 font-medium">Last Triggered</th>
+                <th className="text-left py-4 px-4 text-muted-foreground/70 font-medium">Proof Hash</th>
                </tr>
             </thead>
             <tbody>
@@ -106,19 +106,19 @@ export default function WebhooksPage() {
                 webhooks.map((webhook, index) => (
                   <motion.tr
                     key={webhook.id}
-                    className="border-b border-white/5 hover:bg-white/[0.02] transition-colors"
+                    className="border-border hover:bg-muted/20 transition-colors"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4 + index * 0.05 }}
                   >
                     <td className="py-4 px-4 font-mono text-xs">{webhook.id}</td>
-                    <td className="py-4 px-4 text-neutral-400 text-xs">{webhook.endpoint}</td>
+                    <td className="py-4 px-4 text-muted-foreground text-xs">{webhook.endpoint}</td>
                     <td className="py-4 px-4">
                       <div className="flex flex-wrap gap-1">
                         {webhook.events.slice(0, 2).map((event) => (
                           <span
                             key={event}
-                            className="px-2 py-1 bg-white/5 rounded text-xs whitespace-nowrap"
+                            className="px-2 py-1 bg-muted rounded text-xs whitespace-nowrap"
                           >
                             {event}
                           </span>
@@ -130,7 +130,7 @@ export default function WebhooksPage() {
                         className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${
                           webhook.status === 'active'
                             ? 'bg-green-400/10 text-green-400'
-                            : 'bg-neutral-400/10 text-neutral-400'
+                            : 'bg-neutral-400/10 text-muted-foreground'
                         }`}
                       >
                         {webhook.status === 'active' ? (
@@ -141,9 +141,9 @@ export default function WebhooksPage() {
                         {webhook.status}
                       </span>
                     </td>
-                    <td className="py-4 px-4 text-neutral-400">{webhook.lastTriggered}</td>
+                    <td className="py-4 px-4 text-muted-foreground">{webhook.lastTriggered}</td>
                     <td className="py-4 px-4">
-                      <button className="font-mono text-xs text-neutral-500 hover:text-white transition-colors cursor-pointer">
+                      <button className="font-mono text-xs text-muted-foreground/70 hover:text-foreground transition-colors cursor-pointer">
                         {webhook.hash}
                       </button>
                     </td>
