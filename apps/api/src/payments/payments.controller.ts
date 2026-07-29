@@ -164,8 +164,27 @@ export class PaymentsController {
 
   @Get(':paymentId')
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Get a payment intent' })
-  @ApiResponse({ status: 200, description: 'Payment intent retrieved successfully' })
+  @ApiOperation({ summary: 'Get a payment intent by ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Payment intent retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string' },
+        paymentId: { type: 'string' },
+        paymentReference: { type: 'string' },
+        amount: { type: 'number' },
+        currency: { type: 'string' },
+        reference: { type: 'string' },
+        metadata: { type: 'object' },
+        status: { type: 'string', enum: ['pending', 'detected', 'confirmed', 'failed'] },
+        createdAt: { type: 'string', format: 'date-time' },
+        updatedAt: { type: 'string', format: 'date-time' },
+        expiresAt: { type: 'string', format: 'date-time' },
+      },
+    },
+  })
   @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Payment intent not found' })
