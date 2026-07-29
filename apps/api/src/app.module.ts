@@ -14,6 +14,7 @@ import { ThrottlerStorageRedisService } from './rate-limiter/throttler-storage-r
 import { TransactionsModule } from './transactions/transactions.module';
 import { WorkerModule } from './modules/worker/worker.module';
 import { WebhookModule } from './webhooks/webhook.module';
+import { MerchantsModule } from './merchants/merchants.module';
 import { PaymentsModule } from './payments/payments.module';
 import { PrismaClientExceptionFilter } from './prisma/prisma-exception.filter';
 
@@ -27,6 +28,7 @@ import { PrismaClientExceptionFilter } from './prisma/prisma-exception.filter';
     TransactionsModule,
     WorkerModule,
     WebhookModule,
+    MerchantsModule,
     PaymentsModule,
     ThrottlerModule.forRoot({
       throttlers: [
