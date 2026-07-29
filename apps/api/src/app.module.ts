@@ -18,6 +18,7 @@ import { MerchantsModule } from './merchants/merchants.module';
 import { PaymentsModule } from './payments/payments.module';
 import { PrismaClientExceptionFilter } from './prisma/prisma-exception.filter';
 import { RequestLoggerMiddleware } from './common/middleware/request-logger.middleware';
+import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 
 @Module({
   imports: [
@@ -59,6 +60,7 @@ import { RequestLoggerMiddleware } from './common/middleware/request-logger.midd
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
+    consumer.apply(RequestIdMiddleware).forRoutes({ path: '*', method: RequestMethod.ALL });
     consumer.apply(RequestLoggerMiddleware).forRoutes({ path: '*', method: RequestMethod.ALL });
   }
 }
