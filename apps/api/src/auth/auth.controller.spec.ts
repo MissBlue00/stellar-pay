@@ -72,13 +72,16 @@ describe('AuthController', () => {
       password: 'correct-password',
     };
 
-    it('should return access token with correct credentials', async () => {
+    it('should return access token with correct credentials and CSRF token', async () => {
       const expected = { access_token: 'jwt-token', expires_in: 3600 };
       authService.login.mockResolvedValue(expected);
 
       const result = await controller.login(loginDto);
 
-      expect(result).toEqual(expected);
+      expect(result).toEqual({
+        ...expected,
+        csrf_token: expect.any(String),
+      });
       expect(authService.login).toHaveBeenCalledWith(loginDto);
     });
 
