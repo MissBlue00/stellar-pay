@@ -24,23 +24,10 @@ export class TreasuryController {
   @ApiResponse({ status: 404, description: 'Not found' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
   async getBalance(): Promise<TreasuryBalanceResponse> {
-    const supportedAssets = (process.env.SUPPORTED_ASSETS ?? 'USDC,ARS').split(',');
-    const reserves = await Promise.all(
-      supportedAssets.map((asset) => this.treasuryService.getAssetReserve(asset.trim())),
-    );
-    const totalValue = reserves.reduce(
-      (sum, r) => sum + parseFloat(r.treasury_balance),
-      0,
-    );
-    const totalReserves = reserves.reduce(
-      (sum, r) => sum + parseFloat(r.total_supply),
-      0,
-    );
+    const assets = await this.treasuryService.getTreasuryAssetBalances();
+
     return {
-      total_treasury_value: totalValue,
-      total_reserve_backing: totalReserves,
-      active_assets: reserves.length,
-      assets: reserves,
+      assets,
     };
   }
 

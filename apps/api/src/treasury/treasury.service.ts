@@ -1,8 +1,13 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import * as StellarSdk from '@stellar/stellar-sdk';
-import { AssetReserve, RedeemResponse } from './interfaces/proof-of-reserves.interface';
+import {
+  AssetReserve,
+  RedeemResponse,
+  TreasuryAssetBalance,
+} from './interfaces/proof-of-reserves.interface';
 import { RedemptionRepository } from '../modules/database/redemption.repository';
 import { RedeemDto } from './dto/redeem.dto';
+import { PrismaService } from '../prisma/prisma.service';
 
 interface MerchantBalance {
   merchantId: string;
@@ -34,7 +39,10 @@ export class TreasuryService {
     return new StellarSdk.Horizon.Server(this.horizonUrl);
   }
 
-  constructor(private readonly redemptionRepo: RedemptionRepository) {}
+  constructor(
+    private readonly redemptionRepo: RedemptionRepository,
+    private readonly prisma: PrismaService,
+  ) {}
 
   private getAssetIssuer(): string {
     if (!this.issuerPublicKey) {
@@ -77,6 +85,24 @@ export class TreasuryService {
       treasury_balance: treasuryBalance,
       reserve_ratio: reserveRatio,
     };
+  }
+
+  async getTreasuryAssetBalances(): Promise<TreasuryAssetBalance[]> {
+    const assets = await this.prisma.treasuryAsset.findMany({
+      orderBy: { symbol: 'asc' },
+    });
+
+    return assets.map((asset) => {
+      const totalMinted = Number(asset.totalMinted);
+      const totalReserved = Number(asset.totalReserved);
+
+      return {
+        symbol: asset.symbol,
+        totalMinted,
+        totalReserved,
+        available: totalMinted - totalReserved,
+      };
+    });
   }
 
   /**

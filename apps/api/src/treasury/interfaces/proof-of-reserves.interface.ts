@@ -11,11 +11,15 @@ export interface ProofOfReservesResponse {
   reserves: AssetReserve[];
 }
 
+export interface TreasuryAssetBalance {
+  symbol: string;
+  totalMinted: number;
+  totalReserved: number;
+  available: number;
+}
+
 export interface TreasuryBalanceResponse {
-  total_treasury_value: number;
-  total_reserve_backing: number;
-  active_assets: number;
-  assets: AssetReserve[];
+  assets: TreasuryAssetBalance[];
 }
 
 export interface RedeemResponse {
