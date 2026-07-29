@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { Coins, TrendingUp, Eye, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
 import { Skeleton } from "@/app/components/ui/skeleton";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 
@@ -128,6 +129,7 @@ export default function TreasuryPage() {
         ))}
       </div>
 
+      <ErrorBoundary name="Mirror Assets">
       {/* Mirror Assets */}
       <motion.div
         className="mb-8 p-6 bg-gradient-to-br from-white/[0.03] to-transparent border border-white/5 rounded-xl"
@@ -210,7 +212,10 @@ export default function TreasuryPage() {
         </div>
       </motion.div>
 
+      </ErrorBoundary>
+
       <div className="grid lg:grid-cols-2 gap-6">
+        <ErrorBoundary name="Burn History">
         {/* Burn History */}
         <motion.div
           className="p-6 bg-gradient-to-br from-white/[0.03] to-transparent border border-white/5 rounded-xl"
@@ -246,6 +251,9 @@ export default function TreasuryPage() {
           </div>
         </motion.div>
 
+        </ErrorBoundary>
+
+        <ErrorBoundary name="Liquidity Health">
         {/* Liquidity Health */}
         <motion.div
           className="p-6 bg-gradient-to-br from-white/[0.03] to-transparent border border-white/5 rounded-xl"
@@ -281,6 +289,7 @@ export default function TreasuryPage() {
             ))}
           </div>
         </motion.div>
+        </ErrorBoundary>
       </div>
     </div>
   );

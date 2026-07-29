@@ -21,6 +21,7 @@ import {
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 const navigation = [
   { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
@@ -139,7 +140,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Main content */}
       <div className="lg:pl-64 pt-16 lg:pt-0">
-        <main className="min-h-screen">{children}</main>
+        <main className="min-h-screen">
+          <ErrorBoundary name="Page">
+            {children}
+          </ErrorBoundary>
+        </main>
       </div>
 
       {/* Mobile overlay */}

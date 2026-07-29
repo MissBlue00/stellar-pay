@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   AlertCircle,
 } from 'lucide-react';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useState } from 'react';
 
 const stats = [
@@ -120,6 +121,7 @@ export default function OverviewPage() {
       </div>
 
       {/* Stats Grid */}
+      <ErrorBoundary name="Stats Grid">
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {stats.map((stat, index) => (
           <motion.div
@@ -167,7 +169,9 @@ export default function OverviewPage() {
           </motion.div>
         ))}
       </div>
+      </ErrorBoundary>
 
+      <ErrorBoundary name="Asset Balances">
       <div className="grid lg:grid-cols-3 gap-6 mb-8">
         {/* Asset Balances */}
         <motion.div
@@ -286,7 +290,9 @@ export default function OverviewPage() {
           </div>
         </motion.div>
       </div>
+      </ErrorBoundary>
 
+      <ErrorBoundary name="Transaction Feed">
       {/* Real-time Transaction Feed */}
       <motion.div
         className="p-6 bg-gradient-to-br from-white/[0.03] to-transparent border border-white/5 rounded-xl"
@@ -376,6 +382,7 @@ export default function OverviewPage() {
           </table>
         </div>
       </motion.div>
+      </ErrorBoundary>
     </div>
   );
 }
