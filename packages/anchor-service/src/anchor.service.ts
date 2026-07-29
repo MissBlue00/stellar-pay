@@ -25,6 +25,8 @@ import type { PaymentStatusResponse } from './interfaces/payment-status.interfac
 import type {
   DepositParams,
   DepositResponse,
+  Sep24Transaction,
+  Sep24DepositResponse,
   Sep24WithdrawalResponse,
 } from './interfaces/sep24.interface';
 import type { SwapParams, SwapResult } from './interfaces/swap.interface';
@@ -881,7 +883,44 @@ export class AnchorService {
   // SEP-24 Deposit Flow
   // ---------------------------------------------------------------------------
 
-  async createSep24Deposit(params: DepositParams): Promise<DepositResponse> {
+  async createSep24Deposit(
+    assetCode: string,
+    amount: string,
+    accountId: string,
+  ): Promise<Sep24DepositResponse>;
+  async createSep24Deposit(params: DepositParams): Promise<DepositResponse>;
+  async createSep24Deposit(
+    assetCodeOrParams: string | DepositParams,
+    amount?: string,
+    accountId?: string,
+  ): Promise<Sep24DepositResponse | DepositResponse> {
+    if (typeof assetCodeOrParams === 'object') {
+      return this.executeSep24Deposit(assetCodeOrParams);
+    }
+
+    const params: DepositParams = {
+      anchorUrl: process.env.ANCHOR_URL ?? 'https://anchor.example.com',
+      account: accountId!,
+      assetCode: assetCodeOrParams,
+      amount,
+    };
+
+    const deposit = await this.executeSep24Deposit(params);
+
+    return {
+      success: deposit.success,
+      transactionId: deposit.transactionId,
+      interactiveUrl: deposit.interactiveUrl,
+      error: deposit.error,
+      amount: deposit.amount,
+      assetCode: deposit.assetCode,
+      status: deposit.status,
+      createdAt: deposit.createdAt,
+      updatedAt: deposit.updatedAt,
+    };
+  }
+
+  private async executeSep24Deposit(params: DepositParams): Promise<DepositResponse> {
     const transactionId = `sep24_${crypto.randomUUID().split('-').join('').slice(0, 16)}`;
 
     try {
@@ -937,6 +976,25 @@ export class AnchorService {
         updatedAt: record.updatedAt,
       };
     }
+  }
+
+  pollSep24DepositStatus(transactionId: string): Sep24Transaction | undefined {
+    const deposit = this.sep24Deposits.get(transactionId);
+    if (!deposit) {
+      return undefined;
+    }
+
+    return {
+      transactionId: deposit.transactionId,
+      account: deposit.account,
+      assetCode: deposit.assetCode,
+      amount: deposit.amount,
+      status: deposit.status,
+      interactiveUrl: deposit.interactiveUrl,
+      error: deposit.error,
+      createdAt: deposit.createdAt,
+      updatedAt: deposit.updatedAt,
+    };
   }
 
   getSep24Deposit(transactionId: string): Sep24DepositRecord | undefined {
