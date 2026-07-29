@@ -32,6 +32,15 @@ enum TreasuryWalletType {
   COLD
 }
 
+enum EscrowStatus {
+  PENDING
+  FUNDED
+  RELEASED
+  CANCELLED
+  REFUNDED
+  DISPUTED
+}
+
 enum UserRole {
   ADMIN
   VIEWER
@@ -54,6 +63,7 @@ model Merchant {
   customers        Customer[]
   subscriptions    Subscription[]
   users            User[]
+  escrows          EscrowTransaction[]
 
   @@map("merchants")
 }
