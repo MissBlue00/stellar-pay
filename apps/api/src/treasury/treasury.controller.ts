@@ -2,7 +2,11 @@ import { Body, Controller, Get, HttpCode, HttpStatus, Post } from '@nestjs/commo
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { TreasuryService } from './treasury.service';
-import { ProofOfReservesResponse, RedeemResponse } from './interfaces/proof-of-reserves.interface';
+import {
+  ProofOfReservesResponse,
+  RedeemResponse,
+  TreasuryBalanceResponse,
+} from './interfaces/proof-of-reserves.interface';
 import { RedeemDto } from './dto/redeem.dto';
 import { CurrentMerchant } from '../auth/decorators/current-merchant.decorator';
 import type { MerchantUser } from '../auth/interfaces/merchant-user.interface';
@@ -11,6 +15,28 @@ import type { MerchantUser } from '../auth/interfaces/merchant-user.interface';
 @Controller('treasury')
 export class TreasuryController {
   constructor(private readonly treasuryService: TreasuryService) {}
+
+  @Get('balance')
+  async getBalance(): Promise<TreasuryBalanceResponse> {
+    const supportedAssets = (process.env.SUPPORTED_ASSETS ?? 'USDC,ARS').split(',');
+    const reserves = await Promise.all(
+      supportedAssets.map((asset) => this.treasuryService.getAssetReserve(asset.trim())),
+    );
+    const totalValue = reserves.reduce(
+      (sum, r) => sum + parseFloat(r.treasury_balance),
+      0,
+    );
+    const totalReserves = reserves.reduce(
+      (sum, r) => sum + parseFloat(r.total_supply),
+      0,
+    );
+    return {
+      total_treasury_value: totalValue,
+      total_reserve_backing: totalReserves,
+      active_assets: reserves.length,
+      assets: reserves,
+    };
+  }
 
   @Get('reserves')
   async getProofOfReserves(): Promise<ProofOfReservesResponse> {
