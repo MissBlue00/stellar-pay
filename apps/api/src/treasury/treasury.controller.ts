@@ -17,6 +17,12 @@ export class TreasuryController {
   constructor(private readonly treasuryService: TreasuryService) {}
 
   @Get('balance')
+  @ApiOperation({ summary: 'Get treasury balance information' })
+  @ApiResponse({ status: 200, description: 'Treasury balance retrieved successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Not found' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
   async getBalance(): Promise<TreasuryBalanceResponse> {
     const supportedAssets = (process.env.SUPPORTED_ASSETS ?? 'USDC,ARS').split(',');
     const reserves = await Promise.all(
@@ -39,6 +45,12 @@ export class TreasuryController {
   }
 
   @Get('reserves')
+  @ApiOperation({ summary: 'Get proof of reserves information' })
+  @ApiResponse({ status: 200, description: 'Proof of reserves retrieved successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Not found' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
   async getProofOfReserves(): Promise<ProofOfReservesResponse> {
     const supportedAssets = (process.env.SUPPORTED_ASSETS ?? 'USDC,ARS').split(',');
 
@@ -75,6 +87,9 @@ export class TreasuryController {
     },
   })
   @ApiResponse({ status: 400, description: 'Insufficient balance or invalid request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Not found' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
   async redeem(
     @Body() dto: RedeemDto,
     @CurrentMerchant() merchant: MerchantUser,

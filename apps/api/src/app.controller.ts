@@ -25,12 +25,24 @@ export class AppController {
 
   @Get()
   @Public()
+  @ApiOperation({ summary: 'Get service health information' })
+  @ApiResponse({ status: 200, description: 'Service health information retrieved successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Not found' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
   getHealthInfo(): HealthInfoResponse {
     return this.buildHealthInfo();
   }
 
   @Get('health')
   @Public()
+  @ApiOperation({ summary: 'Get service health information alias' })
+  @ApiResponse({ status: 200, description: 'Service health information retrieved successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Not found' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
   getHealthInfoAlias(): HealthInfoResponse {
     return this.buildHealthInfo();
   }
@@ -39,11 +51,12 @@ export class AppController {
   @ApiOperation({ summary: 'Say hello to a specific user' })
   @ApiBearerAuth('JWT-auth')
   @ApiSecurity('ApiKey-auth')
-  @ApiResponse({
-    status: 201,
-    description: 'The custom hello message.',
-    type: HelloResponseDto,
-  })
+  @ApiResponse({ status: 200, description: 'The custom hello message.' })
+  @ApiResponse({ status: 201, description: 'The custom hello message.', type: HelloResponseDto })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Not found' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
   sayHello(@Body() requestDto: HelloRequestDto): HelloResponseDto {
     const name = requestDto.name ?? 'World';
     return { message: `Hello ${name}!` };
