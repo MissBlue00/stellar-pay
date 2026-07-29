@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { QRCodeSVG } from 'qrcode.react';
 import {
@@ -16,11 +16,16 @@ import {
   Loader2,
   Lock,
   Check,
+  AlertCircle,
+  RefreshCw,
+  XCircle,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
+
 type PaymentMethod = 'card' | 'bank' | 'crypto';
-type PaymentState = 'initial' | 'processing' | 'confirming' | 'success';
+type PaymentState = 'initial' | 'creating' | 'processing' | 'confirming' | 'success' | 'failed';
 type CryptoToken = 'BTC' | 'ETH' | 'USDC';
 
 interface PaymentDetails {
@@ -35,7 +40,7 @@ export default function PaymentCheckout() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
   const [paymentState, setPaymentState] = useState<PaymentState>('initial');
   const [selectedToken, setSelectedToken] = useState<CryptoToken>('USDC');
-  const [timeRemaining, setTimeRemaining] = useState(900); // 15 minutes
+  const [timeRemaining, setTimeRemaining] = useState(900);
   const [copied, setCopied] = useState(false);
   const [confirmations, setConfirmations] = useState(0);
   const [cardData, setCardData] = useState({
@@ -44,8 +49,11 @@ export default function PaymentCheckout() {
     cvv: '',
     name: '',
   });
+  const [paymentId, setPaymentId] = useState<string | null>(null);
+  const [paymentRef, setPaymentRef] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Mock payment details
   const paymentDetails: PaymentDetails = {
     merchantName: 'Acme Corporation',
     merchantLogo: 'AC',
@@ -57,7 +65,6 @@ export default function PaymentCheckout() {
   const processingFee = paymentMethod === 'crypto' ? 2.5 : 3.99;
   const totalAmount = paymentDetails.amount + processingFee;
 
-  // Crypto addresses for different tokens
   const cryptoAddresses = {
     BTC: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
     ETH: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
@@ -76,6 +83,67 @@ export default function PaymentCheckout() {
     USDC: totalAmount.toFixed(2),
   };
 
+  const stopPolling = useCallback(() => {
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
+  }, []);
+
+  const pollPaymentStatus = useCallback(async (id: string) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/payments/${id}/status`);
+      if (!res.ok) throw new Error('Failed to fetch payment status');
+      const data = await res.json();
+      if (data.status === 'detected' || data.status === 'confirmed') {
+        stopPolling();
+        setPaymentState('success');
+      } else if (data.status === 'failed') {
+        stopPolling();
+        setPaymentState('failed');
+      } else if (data.status === 'confirmed') {
+        stopPolling();
+        setPaymentState('success');
+      }
+    } catch {
+      // Silently retry on next poll interval
+    }
+  }, [stopPolling]);
+
+  const createPayment = useCallback(async () => {
+    setError(null);
+    setPaymentState('creating');
+    try {
+      const res = await fetch(`${API_BASE_URL}/payments/checkout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: totalAmount,
+          currency: 'USDC',
+          reference: `order-${Date.now()}`,
+          metadata: { method: paymentMethod, description: paymentDetails.description },
+        }),
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null);
+        throw new Error(errData?.message ?? `Payment creation failed (${res.status})`);
+      }
+      const data = await res.json();
+      setPaymentId(data.payment_id);
+      setPaymentRef(data.payment_reference);
+      setPaymentState('processing');
+
+      pollingRef.current = setInterval(() => pollPaymentStatus(data.payment_id), 3000);
+    } catch (err) {
+      setPaymentState('initial');
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+    }
+  }, [totalAmount, paymentMethod, paymentDetails.description, pollPaymentStatus]);
+
+  useEffect(() => {
+    return () => stopPolling();
+  }, [stopPolling]);
+
   // Timer countdown for bank transfer
   useEffect(() => {
     if (paymentMethod === 'bank' && paymentState === 'processing') {
@@ -91,26 +159,6 @@ export default function PaymentCheckout() {
       return () => clearInterval(timer);
     }
   }, [paymentMethod, paymentState]);
-
-  // Mock crypto confirmation progress
-  useEffect(() => {
-    if (paymentState === 'confirming') {
-      const intervals = [2000, 3000, 4000];
-      let currentStep = 0;
-
-      const progressTimer = setInterval(() => {
-        currentStep++;
-        setConfirmations(currentStep);
-
-        if (currentStep >= 3) {
-          clearInterval(progressTimer);
-          setTimeout(() => setPaymentState('success'), 1000);
-        }
-      }, intervals[currentStep] || 3000);
-
-      return () => clearInterval(progressTimer);
-    }
-  }, [paymentState]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -128,18 +176,15 @@ export default function PaymentCheckout() {
     if (!cardData.number || !cardData.expiry || !cardData.cvv || !cardData.name) {
       return;
     }
-    setPaymentState('processing');
-    setTimeout(() => setPaymentState('success'), 2500);
+    createPayment();
   };
 
   const handleBankPayment = () => {
-    setPaymentState('processing');
-    // Simulate bank transfer detection after 5 seconds
-    setTimeout(() => setPaymentState('success'), 5000);
+    createPayment();
   };
 
   const handleCryptoDetection = () => {
-    setPaymentState('confirming');
+    createPayment();
   };
 
   if (paymentState === 'success') {
@@ -152,7 +197,6 @@ export default function PaymentCheckout() {
           className="max-w-lg w-full"
         >
           <div className="relative bg-gradient-to-b from-zinc-900 to-black border border-zinc-800/50 rounded-3xl p-10 overflow-hidden">
-            {/* Gradient orb background */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-b from-emerald-500/10 to-transparent blur-3xl pointer-events-none" />
 
             <div className="relative">
@@ -190,8 +234,8 @@ export default function PaymentCheckout() {
               >
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-zinc-400 text-sm">Transaction ID</span>
-                    <span className="text-white font-mono text-sm">TXN-2847291</span>
+                    <span className="text-zinc-400 text-sm">Reference</span>
+                    <span className="text-white font-mono text-sm">{paymentRef}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-zinc-400 text-sm">Amount Paid</span>
@@ -218,23 +262,71 @@ export default function PaymentCheckout() {
                 transition={{ delay: 0.45 }}
                 className="space-y-3"
               >
-                {paymentMethod === 'crypto' && (
-                  <Button
-                    className="w-full bg-zinc-900 hover:bg-zinc-800 text-white border border-zinc-800 h-12 rounded-xl transition-all duration-200"
-                    onClick={() =>
-                      window.open('https://etherscan.io/tx/0x1234567890abcdef', '_blank')
-                    }
-                  >
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    View on Block Explorer
-                  </Button>
-                )}
-
                 <Button
                   className="w-full bg-white hover:bg-zinc-100 text-black h-12 rounded-xl transition-all duration-200"
                   onClick={() => window.location.reload()}
                 >
                   Return to {paymentDetails.merchantName}
+                </Button>
+              </motion.div>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  if (paymentState === 'failed') {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          className="max-w-lg w-full"
+        >
+          <div className="relative bg-gradient-to-b from-zinc-900 to-black border border-zinc-800/50 rounded-3xl p-10 overflow-hidden">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-b from-red-500/10 to-transparent blur-3xl pointer-events-none" />
+
+            <div className="relative">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: 'spring', stiffness: 200, damping: 15 }}
+                className="w-20 h-20 mx-auto mb-8 bg-gradient-to-br from-red-500/20 to-red-600/5 rounded-full flex items-center justify-center border border-red-500/20"
+              >
+                <XCircle className="w-10 h-10 text-red-400" strokeWidth={2} />
+              </motion.div>
+
+              <motion.h2
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="text-3xl text-white mb-3 text-center tracking-tight"
+              >
+                Payment Failed
+              </motion.h2>
+              <motion.p
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35 }}
+                className="text-zinc-400 mb-10 text-center"
+              >
+                Your payment could not be processed. Please try again.
+              </motion.p>
+
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.45 }}
+                className="space-y-3"
+              >
+                <Button
+                  className="w-full bg-white hover:bg-zinc-100 text-black h-12 rounded-xl transition-all duration-200"
+                  onClick={() => window.location.reload()}
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Try Again
                 </Button>
               </motion.div>
             </div>
@@ -623,6 +715,40 @@ export default function PaymentCheckout() {
                   </>
                 )}
 
+                {/* Creating State */}
+                {paymentState === 'creating' && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-center py-16"
+                  >
+                    <div className="relative w-16 h-16 mx-auto mb-6">
+                      <Loader2 className="w-16 h-16 animate-spin text-white" strokeWidth={1.5} />
+                      <div className="absolute inset-0 bg-white/5 blur-xl rounded-full" />
+                    </div>
+                    <h3 className="text-2xl mb-3 tracking-tight">Creating Payment...</h3>
+                    <p className="text-zinc-400">Initializing your payment request</p>
+                  </motion.div>
+                )}
+
+                {/* Error State */}
+                {error && paymentState === 'initial' && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-6 p-4 bg-gradient-to-br from-red-500/10 to-red-600/5 border border-red-500/20 rounded-2xl flex items-start"
+                  >
+                    <AlertCircle className="w-5 h-5 text-red-400 mr-3 flex-shrink-0 mt-0.5" />
+                    <p className="text-red-300 text-sm flex-1">{error}</p>
+                    <button
+                      onClick={() => setError(null)}
+                      className="text-red-400 hover:text-red-300 ml-2"
+                    >
+                      <XCircle className="w-4 h-4" />
+                    </button>
+                  </motion.div>
+                )}
+
                 {/* Processing State */}
                 {paymentState === 'processing' && (
                   <motion.div
@@ -637,11 +763,17 @@ export default function PaymentCheckout() {
                     <h3 className="text-2xl mb-3 tracking-tight">
                       {paymentMethod === 'bank' ? 'Awaiting Transfer' : 'Processing Payment'}
                     </h3>
-                    <p className="text-zinc-400">
+                    <p className="text-zinc-400 mb-4">
                       {paymentMethod === 'bank'
                         ? 'Monitoring for your bank transfer...'
-                        : 'Confirming your payment details...'}
+                        : 'Waiting for payment confirmation...'}
                     </p>
+                    {paymentRef && (
+                      <div className="inline-flex items-center px-4 py-2 bg-zinc-900/50 border border-zinc-800/50 rounded-full">
+                        <span className="text-zinc-500 text-xs mr-2">Ref:</span>
+                        <span className="text-white font-mono text-xs">{paymentRef}</span>
+                      </div>
+                    )}
                   </motion.div>
                 )}
 
@@ -654,7 +786,13 @@ export default function PaymentCheckout() {
                         <div className="absolute inset-0 bg-white/5 blur-xl rounded-full" />
                       </div>
                       <h3 className="text-2xl mb-3 tracking-tight">Confirming Transaction</h3>
-                      <p className="text-zinc-400">Waiting for blockchain confirmations...</p>
+                      <p className="text-zinc-400 mb-4">Waiting for blockchain confirmations...</p>
+                      {paymentRef && (
+                        <div className="inline-flex items-center px-4 py-2 bg-zinc-900/50 border border-zinc-800/50 rounded-full">
+                          <span className="text-zinc-500 text-xs mr-2">Ref:</span>
+                          <span className="text-white font-mono text-xs">{paymentRef}</span>
+                        </div>
+                      )}
                     </div>
 
                     <div className="space-y-3">

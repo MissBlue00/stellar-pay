@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
+import { Public } from '../auth/decorators/public.decorator.js';
 import { CurrentMerchant } from '../auth/decorators/current-merchant.decorator.js';
 import { type MerchantUser } from '../auth/interfaces/merchant-user.interface.js';
 import { CreatePaymentIntentDto } from './dto/create-payment-intent.dto.js';
@@ -27,6 +28,41 @@ export class PaymentsController {
     private readonly paymentsService: PaymentsService,
     private readonly depositAddressService: DepositAddressService,
   ) {}
+
+  @Post('checkout')
+  @Public()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create a payment intent from public checkout' })
+  @ApiResponse({
+    status: 201,
+    description: 'Payment intent created',
+    schema: {
+      type: 'object',
+      properties: {
+        payment_id: { type: 'string' },
+        payment_reference: { type: 'string' },
+        checkout_url: { type: 'string' },
+        status: { type: 'string' },
+        created_at: { type: 'string' },
+        expires_at: { type: 'string' },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
+  createCheckoutPayment(@Body() dto: CreatePaymentIntentDto): CreatePaymentIntentResponse {
+    const payment = this.paymentsService.createPaymentIntent(dto, 'checkout');
+    const checkoutUrl = `${process.env.CHECKOUT_ORIGIN ?? 'http://localhost:3001'}/checkout?paymentId=${payment.id}`;
+    return {
+      payment_id: payment.id,
+      payment_reference: payment.paymentReference,
+      checkout_url: checkoutUrl,
+      status: payment.status,
+      created_at: payment.createdAt,
+      expires_at: payment.expiresAt,
+    };
+  }
 
   @Post()
   @Throttle({ default: { limit: 10, ttl: 60000 } })
@@ -136,6 +172,24 @@ export class PaymentsController {
       throw new NotFoundException('Payment intent not found');
     }
     return intent;
+  }
+
+  @Get(':paymentId/status')
+  @Public()
+  @ApiOperation({ summary: 'Get payment status (public)' })
+  @ApiResponse({ status: 200, description: 'Payment status retrieved' })
+  @ApiResponse({ status: 404, description: 'Payment not found' })
+  getPaymentStatus(@Param('paymentId') paymentId: string) {
+    const intent = this.paymentsService.findOneOrFail(paymentId);
+    return {
+      payment_id: intent.paymentId,
+      payment_reference: intent.paymentReference,
+      amount: intent.amount,
+      currency: intent.currency,
+      status: intent.status,
+      created_at: intent.createdAt,
+      expires_at: intent.expiresAt,
+    };
   }
 
   @Get(':paymentId/deposit-addresses')
