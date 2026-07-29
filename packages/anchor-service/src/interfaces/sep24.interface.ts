@@ -23,3 +23,15 @@ export interface DepositResponse {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface Sep24WithdrawalResponse {
+  success: boolean;
+  id?: string;
+  interactiveUrl?: string;
+  error?: string;
+  amount?: string;
+  assetCode?: string;
+  status?: 'pending' | 'incomplete' | 'completed' | 'failed';
+  createdAt: string;
+  updatedAt: string;
+}

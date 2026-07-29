@@ -22,7 +22,11 @@ import type {
 import type { KycStatusResponse } from './interfaces/kyc.interface';
 import type { FeeQuote, TransactionType } from './interfaces/fee.interface';
 import type { PaymentStatusResponse } from './interfaces/payment-status.interface';
-import type { DepositParams, DepositResponse } from './interfaces/sep24.interface';
+import type {
+  DepositParams,
+  DepositResponse,
+  Sep24WithdrawalResponse,
+} from './interfaces/sep24.interface';
 import type { SwapParams, SwapResult } from './interfaces/swap.interface';
 
 interface CustomerRecord {
@@ -67,6 +71,18 @@ interface Sep24DepositRecord {
   updatedAt: string;
 }
 
+interface Sep24WithdrawalRecord {
+  id: string;
+  accountId: string;
+  assetCode: string;
+  amount: string;
+  status: 'pending' | 'incomplete' | 'completed' | 'failed';
+  interactiveUrl?: string;
+  error?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface SwapRecord {
   swapId: string;
   sourceAsset: StellarAsset;
@@ -86,12 +102,17 @@ interface StellarAsset {
   assetIssuer?: string;
 }
 
+declare const process: {
+  env: Record<string, string | undefined>;
+};
+
 export class AnchorService {
   private readonly payments = new Map<string, Sep31PaymentRecord>();
   private readonly transactions = new Map<string, AnchorTransaction>();
   private readonly customers = new Map<string, CustomerRecord>();
   private readonly accountLinks = new Map<string, string>();
   private readonly sep24Deposits = new Map<string, Sep24DepositRecord>();
+  private readonly sep24Withdrawals = new Map<string, Sep24WithdrawalRecord>();
   private readonly swaps = new Map<string, SwapRecord>();
 
   // ---------------------------------------------------------------------------
@@ -750,6 +771,110 @@ export class AnchorService {
     _document: Record<string, unknown> | IdentityDocument,
   ): Promise<boolean> {
     return true;
+  }
+
+  // ---------------------------------------------------------------------------
+  // SEP-24 Withdrawal Flow
+  // ---------------------------------------------------------------------------
+
+  async createSep24Withdrawal(
+    assetCode: string,
+    amount: string,
+    accountId: string,
+  ): Promise<Sep24WithdrawalResponse> {
+    const id = `sep24_withdraw_${crypto.randomUUID().split('-').join('').slice(0, 16)}`;
+
+    try {
+      const interactiveUrl = this.buildWithdrawalInteractiveUrl(assetCode, amount, accountId, id);
+
+      const record: Sep24WithdrawalRecord = {
+        id,
+        accountId,
+        assetCode,
+        amount,
+        status: 'pending',
+        interactiveUrl,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      this.sep24Withdrawals.set(id, record);
+
+      return {
+        success: true,
+        id,
+        interactiveUrl,
+        amount,
+        assetCode,
+        status: 'pending',
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt,
+      };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+
+      const record: Sep24WithdrawalRecord = {
+        id,
+        accountId,
+        assetCode,
+        amount,
+        status: 'failed',
+        error: errorMessage,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      this.sep24Withdrawals.set(id, record);
+
+      return {
+        success: false,
+        id,
+        error: errorMessage,
+        amount,
+        assetCode,
+        status: 'failed',
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt,
+      };
+    }
+  }
+
+  pollSep24WithdrawalStatus(id: string): Sep24WithdrawalResponse | undefined {
+    const withdrawal = this.sep24Withdrawals.get(id);
+    if (!withdrawal) {
+      return undefined;
+    }
+
+    return {
+      success: true,
+      id: withdrawal.id,
+      amount: withdrawal.amount,
+      assetCode: withdrawal.assetCode,
+      status: withdrawal.status,
+      interactiveUrl: withdrawal.interactiveUrl,
+      createdAt: withdrawal.createdAt,
+      updatedAt: withdrawal.updatedAt,
+      error: withdrawal.error,
+    };
+  }
+
+  private buildWithdrawalInteractiveUrl(
+    assetCode: string,
+    amount: string,
+    accountId: string,
+    id: string,
+  ): string {
+    const anchorUrl = process.env.ANCHOR_URL ?? 'https://anchor.example.com';
+    const url = new URL(anchorUrl);
+    const pathname = url.pathname.replace(/\/$/, '');
+    url.pathname = `${pathname}/withdraw/interactive`;
+
+    url.searchParams.set('account', accountId);
+    url.searchParams.set('asset_code', assetCode);
+    url.searchParams.set('amount', amount);
+    url.searchParams.set('transaction_id', id);
+
+    return url.toString();
   }
 
   // ---------------------------------------------------------------------------
