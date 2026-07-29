@@ -22,6 +22,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { ThemeToggle } from '@/app/components/theme-toggle';
 
 const navigation = [
   { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },

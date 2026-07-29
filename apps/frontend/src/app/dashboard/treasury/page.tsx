@@ -85,7 +85,7 @@ export default function TreasuryPage() {
         >
           Treasury
         </motion.h1>
-        <p className="text-sm text-neutral-400">Manage mirror assets, reserves, and redemptions</p>
+        <p className="text-sm text-muted-foreground">Manage mirror assets, reserves, and redemptions</p>
       </div>
 
       {/* Error State */}
@@ -111,20 +111,20 @@ export default function TreasuryPage() {
         {overviewStats.map((stat, index) => (
           <motion.div
             key={stat.label}
-            className="p-6 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/10 rounded-xl"
+            className="p-6 bg-card border-border rounded-xl"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
           >
             <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-white/5 rounded-lg">
+              <div className="p-2 bg-muted rounded-lg">
                 <stat.icon className="size-5" />
               </div>
             </div>
             <div className="text-2xl font-medium mb-1">
               {loading ? <Skeleton className="h-8 w-28 inline-block" /> : stat.value}
             </div>
-            <div className="text-xs text-neutral-500">{stat.label}</div>
+            <div className="text-xs text-muted-foreground/70">{stat.label}</div>
           </motion.div>
         ))}
       </div>
@@ -132,7 +132,7 @@ export default function TreasuryPage() {
       <ErrorBoundary name="Mirror Assets">
       {/* Mirror Assets */}
       <motion.div
-        className="mb-8 p-6 bg-gradient-to-br from-white/[0.03] to-transparent border border-white/5 rounded-xl"
+        className="mb-8 p-6 bg-card border-border rounded-xl"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
@@ -141,7 +141,7 @@ export default function TreasuryPage() {
 
         <div className="space-y-4">
           {loading ? Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="p-6 bg-white/[0.02] border border-white/5 rounded-lg">
+            <div key={i} className="p-6 bg-muted/30 border-border rounded-lg">
               <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div>
                   <Skeleton className="h-12 w-32" />
@@ -165,7 +165,7 @@ export default function TreasuryPage() {
           )) : data?.assets.map((asset, index) => (
             <motion.div
               key={asset.symbol}
-              className="p-6 bg-white/[0.02] border border-white/5 rounded-lg hover:border-white/10 transition-all"
+              className="p-6 bg-muted/30 border-border rounded-lg hover:border-foreground/10 transition-all"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.4 + index * 0.1 }}
@@ -173,23 +173,23 @@ export default function TreasuryPage() {
               <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div>
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-white/20 to-white/10 flex items-center justify-center font-medium">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-foreground/10 to-foreground/5 flex items-center justify-center font-medium">
                       {asset.symbol.slice(0, 2)}
                     </div>
                     <div>
                       <div className="font-medium">s{asset.symbol}</div>
-                      <div className="text-xs text-neutral-500">{assetNames[asset.symbol] ?? asset.symbol}</div>
+                      <div className="text-xs text-muted-foreground/70">{assetNames[asset.symbol] ?? asset.symbol}</div>
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <div className="text-xs text-neutral-500 mb-1">Balance</div>
+                  <div className="text-xs text-muted-foreground/70 mb-1">Balance</div>
                   <div className="font-medium">{parseFloat(asset.treasury_balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}</div>
                 </div>
 
                 <div>
-                  <div className="text-xs text-neutral-500 mb-1">Reserve Backing</div>
+                  <div className="text-xs text-muted-foreground/70 mb-1">Reserve Backing</div>
                   <div className="font-medium">{parseFloat(asset.total_supply).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}</div>
                   <div className="flex items-center gap-1 text-xs text-green-400">
                     <CheckCircle2 className="size-3" />
@@ -198,10 +198,10 @@ export default function TreasuryPage() {
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <button className="px-4 py-2 bg-white text-black rounded-lg hover:bg-neutral-200 transition-all text-sm font-medium cursor-pointer">
+                  <button className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all text-sm font-medium cursor-pointer">
                     Redeem
                   </button>
-                  <button className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-all text-sm flex items-center justify-center gap-2 cursor-pointer">
+                  <button className="px-4 py-2 bg-muted border-border rounded-lg hover:bg-accent transition-all text-sm flex items-center justify-center gap-2 cursor-pointer">
                     <Eye className="size-4" />
                     Proof of Reserves
                   </button>
@@ -218,7 +218,7 @@ export default function TreasuryPage() {
         <ErrorBoundary name="Burn History">
         {/* Burn History */}
         <motion.div
-          className="p-6 bg-gradient-to-br from-white/[0.03] to-transparent border border-white/5 rounded-xl"
+          className="p-6 bg-card border-border rounded-xl"
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.5 }}
@@ -229,20 +229,20 @@ export default function TreasuryPage() {
             {burnHistory.map((burn, index) => (
               <motion.div
                 key={index}
-                className="p-4 bg-white/[0.02] border border-white/5 rounded-lg hover:border-white/10 transition-all"
+                className="p-4 bg-muted/30 border-border rounded-lg hover:border-foreground/10 transition-all"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 + index * 0.05 }}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="px-2 py-1 bg-white/5 rounded text-xs font-medium">
+                  <span className="px-2 py-1 bg-muted rounded text-xs font-medium">
                     {burn.asset}
                   </span>
-                  <span className="text-xs text-neutral-500">{burn.date}</span>
+                  <span className="text-xs text-muted-foreground/70">{burn.date}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="font-medium">{burn.amount}</div>
-                  <button className="font-mono text-xs text-neutral-500 hover:text-white transition-colors cursor-pointer">
+                  <button className="font-mono text-xs text-muted-foreground/70 hover:text-foreground transition-colors cursor-pointer">
                     {burn.hash}
                   </button>
                 </div>
@@ -256,7 +256,7 @@ export default function TreasuryPage() {
         <ErrorBoundary name="Liquidity Health">
         {/* Liquidity Health */}
         <motion.div
-          className="p-6 bg-gradient-to-br from-white/[0.03] to-transparent border border-white/5 rounded-xl"
+          className="p-6 bg-card border-border rounded-xl"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.5 }}
@@ -273,10 +273,10 @@ export default function TreasuryPage() {
             )) : liquidityMetrics.map((metric, index) => (
               <div key={metric.label}>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-neutral-400">{metric.label}</span>
+                  <span className="text-sm text-muted-foreground">{metric.label}</span>
                   <span className="text-sm font-medium text-green-400">{metric.status}</span>
                 </div>
-                <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
                   <motion.div
                     className="h-full bg-gradient-to-r from-green-400 to-green-300"
                     initial={{ width: 0 }}
@@ -284,7 +284,7 @@ export default function TreasuryPage() {
                     transition={{ duration: 1, delay: 0.6 + index * 0.1 }}
                   />
                 </div>
-                <div className="text-right text-xs text-neutral-500 mt-1">{metric.value}%</div>
+                <div className="text-right text-xs text-muted-foreground/70 mt-1">{metric.value}%</div>
               </div>
             ))}
           </div>

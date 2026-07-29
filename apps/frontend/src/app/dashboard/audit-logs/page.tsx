@@ -27,16 +27,16 @@ export default function AuditLogsPage() {
   ) : auditLogs.map((log, index) => (
     <motion.tr
       key={index}
-      className="border-b border-white/5 hover:bg-white/[0.02] transition-colors"
+      className="border-border hover:bg-muted/20 transition-colors"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.4 + index * 0.03 }}
     >
-      <td className="py-4 px-4 text-neutral-400 whitespace-nowrap">{log.timestamp}</td>
+      <td className="py-4 px-4 text-muted-foreground whitespace-nowrap">{log.timestamp}</td>
       <td className="py-4 px-4 font-medium">{log.action}</td>
-      <td className="py-4 px-4 font-mono text-xs text-neutral-400">{log.actor}</td>
-      <td className="py-4 px-4 font-mono text-xs text-neutral-400">{log.ip}</td>
-      <td className="py-4 px-4 text-neutral-400 text-xs">{log.details}</td>
+      <td className="py-4 px-4 font-mono text-xs text-muted-foreground">{log.actor}</td>
+      <td className="py-4 px-4 font-mono text-xs text-muted-foreground">{log.ip}</td>
+      <td className="py-4 px-4 text-muted-foreground text-xs">{log.details}</td>
       <td className="py-4 px-4">
         <span
           className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${
@@ -59,7 +59,7 @@ export default function AuditLogsPage() {
         >
           Audit Logs
         </motion.h1>
-        <p className="text-sm text-neutral-400">Complete activity history with tamper-proof logging</p>
+        <p className="text-sm text-muted-foreground">Complete activity history with tamper-proof logging</p>
       </div>
 
       <div className="grid sm:grid-cols-4 gap-4 mb-8">
@@ -71,13 +71,13 @@ export default function AuditLogsPage() {
         ].map((stat, index) => (
           <motion.div
             key={stat.label}
-            className="p-4 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/10 rounded-xl"
+            className="p-4 bg-card border-border rounded-xl"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
           >
             <div className="text-2xl font-medium mb-1">{stat.value}</div>
-            <div className="text-xs text-neutral-500">{stat.label}</div>
+            <div className="text-xs text-muted-foreground/70">{stat.label}</div>
           </motion.div>
         ))}
       </div>
@@ -99,21 +99,21 @@ export default function AuditLogsPage() {
               repeat: Infinity,
             }}
           />
-          <span className="text-sm text-neutral-400">Live monitoring active</span>
+          <span className="text-sm text-muted-foreground">Live monitoring active</span>
         </div>
         <div className="flex-1" />
-        <button className="px-4 py-3 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-all flex items-center justify-center gap-2 text-sm cursor-pointer">
+        <button className="px-4 py-3 bg-muted border-border rounded-lg hover:bg-accent transition-all flex items-center justify-center gap-2 text-sm cursor-pointer">
           <Filter className="size-4" />
           Filter
         </button>
-        <button className="px-4 py-3 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-all flex items-center justify-center gap-2 text-sm cursor-pointer">
+        <button className="px-4 py-3 bg-muted border-border rounded-lg hover:bg-accent transition-all flex items-center justify-center gap-2 text-sm cursor-pointer">
           <Download className="size-4" />
           Export
         </button>
       </motion.div>
 
       <motion.div
-        className="bg-gradient-to-br from-white/[0.03] to-transparent border border-white/5 rounded-xl overflow-hidden"
+        className="bg-card border-border rounded-xl overflow-hidden"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
@@ -121,13 +121,13 @@ export default function AuditLogsPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/5 bg-white/[0.02]">
-                <th className="text-left py-4 px-4 text-neutral-500 font-medium whitespace-nowrap">Timestamp</th>
-                <th className="text-left py-4 px-4 text-neutral-500 font-medium">Action</th>
-                <th className="text-left py-4 px-4 text-neutral-500 font-medium">Actor</th>
-                <th className="text-left py-4 px-4 text-neutral-500 font-medium">IP Address</th>
-                <th className="text-left py-4 px-4 text-neutral-500 font-medium">Details</th>
-                <th className="text-left py-4 px-4 text-neutral-500 font-medium">Status</th>
+              <tr className="border-border bg-muted/20">
+                <th className="text-left py-4 px-4 text-muted-foreground/70 font-medium whitespace-nowrap">Timestamp</th>
+                <th className="text-left py-4 px-4 text-muted-foreground/70 font-medium">Action</th>
+                <th className="text-left py-4 px-4 text-muted-foreground/70 font-medium">Actor</th>
+                <th className="text-left py-4 px-4 text-muted-foreground/70 font-medium">IP Address</th>
+                <th className="text-left py-4 px-4 text-muted-foreground/70 font-medium">Details</th>
+                <th className="text-left py-4 px-4 text-muted-foreground/70 font-medium">Status</th>
               </tr>
             </thead>
             <tbody>

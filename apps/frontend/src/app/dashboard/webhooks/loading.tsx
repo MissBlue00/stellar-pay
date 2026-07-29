@@ -12,7 +12,7 @@ export default function WebhooksLoading() {
         {Array.from({ length: 3 }).map((_, i) => (
           <div
             key={i}
-            className="p-6 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/10 rounded-xl"
+            className="p-6 bg-card border-border rounded-xl"
           >
             <Skeleton className="h-8 w-20 mb-1" />
             <Skeleton className="h-4 w-28" />
@@ -24,11 +24,11 @@ export default function WebhooksLoading() {
         <Skeleton className="h-11 w-36 rounded-lg" />
       </div>
 
-      <div className="bg-gradient-to-br from-white/[0.03] to-transparent border border-white/5 rounded-xl overflow-hidden">
+      <div className="bg-card border-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/5 bg-white/[0.02]">
+              <tr className="border-border bg-muted/20">
                 {Array.from({ length: 6 }).map((_, i) => (
                   <th key={i} className="py-4 px-4">
                     <Skeleton className="h-4 w-20" />
@@ -38,7 +38,7 @@ export default function WebhooksLoading() {
             </thead>
             <tbody>
               {Array.from({ length: 3 }).map((_, i) => (
-                <tr key={i} className="border-b border-white/5">
+                <tr key={i} className="border-b border-border">
                   {Array.from({ length: 6 }).map((_, j) => (
                     <td key={j} className="py-4 px-4">
                       <Skeleton className="h-4 w-24" />

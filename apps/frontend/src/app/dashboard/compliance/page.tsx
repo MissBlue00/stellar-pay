@@ -14,7 +14,7 @@ export default function CompliancePage() {
         >
           Compliance
         </motion.h1>
-        <p className="text-sm text-neutral-400">KYC/AML status and regulatory requirements</p>
+        <p className="text-sm text-muted-foreground">KYC/AML status and regulatory requirements</p>
       </div>
 
       <div className="grid sm:grid-cols-2 gap-4 mb-8">
@@ -26,7 +26,7 @@ export default function CompliancePage() {
         ].map((stat, index) => (
           <motion.div
             key={stat.label}
-            className="p-6 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/10 rounded-xl"
+            className="p-6 bg-card border-border rounded-xl"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
@@ -35,7 +35,7 @@ export default function CompliancePage() {
               <div className={`p-2 bg-${stat.color}-400/10 rounded-lg`}>
                 <stat.icon className={`size-5 text-${stat.color}-400`} />
               </div>
-              <div className="text-xs text-neutral-500">{stat.label}</div>
+              <div className="text-xs text-muted-foreground/70">{stat.label}</div>
             </div>
             <div className="text-2xl font-medium">{stat.value}</div>
           </motion.div>
@@ -44,7 +44,7 @@ export default function CompliancePage() {
 
       <div className="grid lg:grid-cols-2 gap-6">
         <motion.div
-          className="p-6 bg-gradient-to-br from-white/[0.03] to-transparent border border-white/5 rounded-xl"
+          className="p-6 bg-card border-border rounded-xl"
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3 }}
@@ -59,7 +59,7 @@ export default function CompliancePage() {
             ].map((doc, index) => (
               <motion.div
                 key={doc.name}
-                className="p-4 bg-white/[0.02] border border-white/5 rounded-lg"
+                className="p-4 bg-muted/30 border-border rounded-lg"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 + index * 0.05 }}
@@ -67,7 +67,7 @@ export default function CompliancePage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="font-medium mb-1">{doc.name}</div>
-                    <div className="text-xs text-neutral-500">Uploaded: {doc.date}</div>
+                    <div className="text-xs text-muted-foreground/70">Uploaded: {doc.date}</div>
                   </div>
                   <span
                     className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${
@@ -81,14 +81,14 @@ export default function CompliancePage() {
               </motion.div>
             ))}
           </div>
-          <button className="mt-6 w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-all flex items-center justify-center gap-2 text-sm font-medium cursor-pointer">
+          <button className="mt-6 w-full px-4 py-3 bg-muted border-border rounded-lg hover:bg-accent transition-all flex items-center justify-center gap-2 text-sm font-medium cursor-pointer">
             <Upload className="size-4" />
             Upload Document
           </button>
         </motion.div>
 
         <motion.div
-          className="p-6 bg-gradient-to-br from-white/[0.03] to-transparent border border-white/5 rounded-xl"
+          className="p-6 bg-card border-border rounded-xl"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3 }}
@@ -100,9 +100,9 @@ export default function CompliancePage() {
               { label: "Flagged for Review", value: "0" },
               { label: "Risk Score", value: "Low" },
             ].map((metric) => (
-              <div key={metric.label} className="pb-4 border-b border-white/5 last:border-0">
+              <div key={metric.label} className="pb-4 border-b border-border last:border-0">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-neutral-400">{metric.label}</span>
+                  <span className="text-sm text-muted-foreground">{metric.label}</span>
                   <span className="text-lg font-medium">{metric.value}</span>
                 </div>
               </div>
@@ -114,7 +114,7 @@ export default function CompliancePage() {
               <CheckCircle2 className="size-5 text-green-400 mt-0.5" />
               <div>
                 <div className="font-medium text-green-400 mb-1">Fully Compliant</div>
-                <div className="text-xs text-neutral-400">All regulatory requirements met. Next review scheduled for April 1, 2026.</div>
+                <div className="text-xs text-muted-foreground">All regulatory requirements met. Next review scheduled for April 1, 2026.</div>
               </div>
             </div>
           </div>
