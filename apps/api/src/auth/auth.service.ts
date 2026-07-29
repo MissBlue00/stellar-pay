@@ -3,7 +3,11 @@ import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterMerchantDto } from './dto/register-merchant.dto';
 import { LoginMerchantDto } from './dto/login-merchant.dto';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { hashPassword, comparePassword } from './password.utils';
+
+const ACCESS_TOKEN_EXPIRY = '15m';
+const REFRESH_TOKEN_EXPIRY = '7d';
 
 @Injectable()
 export class AuthService {
@@ -48,11 +52,32 @@ export class AuthService {
     if (!ok) throw new UnauthorizedException('Invalid credentials');
 
     const payload = { merchant_id: merchant.id };
-    const expiresInEnv = process.env.JWT_EXPIRES_IN || '1h';
-    const access_token = this.jwtService.sign(payload, { expiresIn: expiresInEnv });
-    const expires_in = this.parseExpiresInToSeconds(expiresInEnv);
+    const access_token = this.jwtService.sign(payload, { expiresIn: ACCESS_TOKEN_EXPIRY });
+    const refresh_token = this.jwtService.sign(payload, { expiresIn: REFRESH_TOKEN_EXPIRY });
+    const expires_in = this.parseExpiresInToSeconds(ACCESS_TOKEN_EXPIRY);
 
-    return { access_token, expires_in };
+    return { access_token, refresh_token, expires_in };
+  }
+
+  async refreshToken(dto: RefreshTokenDto) {
+    let payload: { merchant_id: string };
+    try {
+      payload = await this.jwtService.verifyAsync<{ merchant_id: string }>(dto.refreshToken);
+    } catch {
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
+
+    const merchant = await this.prisma.merchant.findUnique({
+      where: { id: payload.merchant_id },
+    });
+    if (!merchant) throw new UnauthorizedException('Merchant not found');
+
+    const tokenPayload = { merchant_id: merchant.id };
+    const access_token = this.jwtService.sign(tokenPayload, { expiresIn: ACCESS_TOKEN_EXPIRY });
+    const refresh_token = this.jwtService.sign(tokenPayload, { expiresIn: REFRESH_TOKEN_EXPIRY });
+    const expires_in = this.parseExpiresInToSeconds(ACCESS_TOKEN_EXPIRY);
+
+    return { access_token, refresh_token, expires_in };
   }
 
   logout(authorizationHeader: string | undefined): void {
